@@ -1,0 +1,436 @@
+﻿@page "/"
+
+@using Newtonsoft.Json.Linq
+@using Newtonsoft.Json.Serialization
+@using System.Linq
+@using dbc_Dave.Services
+@using System.Text
+@using System.Web
+@using System.Threading
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+
+@inject IJSRuntime JSRuntime
+@inject IOpenAI openAiApi
+
+
+
+@{
+    string systempromptid = "sysprmpt";
+    string newmessageid = "newmessage";
+    string systemrolename = "system";
+}
+
+
+<AuthorizeView>
+    <NotAuthorized>
+        <p>You do not have permission to access this page.</p>
+    </NotAuthorized>
+    <Authorized>
+        <div class="page">
+            <main>
+                <article class="content px-4">
+
+                    <div class="flex-container">
+                        <div class="container">
+                            <div class="content-wrapper">
+                                <div class="flex-lg-row"><img style="display:flex; float:right; height:100px;" src="../assets/dave.png" /></div>
+
+                                @if (showErrorPopup)
+                                {
+                                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                        <strong>Error!</strong> @errorMessage
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" @onclick="CloseErrorPopup"></button>
+                                    </div>
+                                }
+                                <div class="form-group">
+                                    <label for="systemPrompt">C:\Users\System Prompt> </label>
+                                    <textarea @bind="systemPrompt" type="text" class="form-control add-question" id="@systempromptid"
+                                              placeholder="A System Prompt is like setting the stage, enter the overall theme of what you want the AI to behave as.  Ex 'Excel Expert' or 'fintech expert'"
+                                    @oninput="async (e) => await UpdateTextAreaHeight(systempromptid)" @ref="systemTextareaElement" @onblur="async (e) => await AddMessage(systemrolename, false)"></textarea>
+
+
+                                </div>
+
+                                <div class="chat-container">
+                                    @for (int i = 0; i < messages.Count; i++)
+                                    {
+                                        string messageid = $"textArea-{i}";
+                                        int index = i;
+                                        int rowcnt = GetRowCount(messages[index].Content) + 2;
+                                        <div class="chat-message">
+
+                                            <div class="label-col">
+                                                @if (@messages[index].Role == "assistant")
+                                                {
+                                                    <button class="btn chat-role-label @GetRoleButtonClass(messages[index].Role)" disabled>Dave</button>
+                                                }
+                                                else
+                                                {
+                                                    <button class="btn chat-role-label @GetRoleButtonClass(messages[index].Role)" disabled><i class="fa-solid fa-person"></i></button>
+                                                }
+
+                                            </div>
+
+                                            <div class="input-container">
+                                                @if (messages[index].EditMode)
+                                                {
+                                                    <textarea class="form-control chat-message-content add-question"
+                                                    @bind="messages[index].Content"
+                                                    @onblur="() => { messages[index].EditMode = false; UpdateMessage(index); HighlightCodeBlocks(); }" @oninput="async (e) => await UpdateTextAreaHeight(messageid)"
+                                                              id="@messageid" @onfocus="() => messages[index].EditMode = true"></textarea>
+
+                                                }
+                                                else
+                                                {
+
+                                                    var codeBlockContent = (MarkupString)RenderCodeBlock(messages[index].Content);
+                                                    <div style="display: flex; flex-direction: row;">
+                                                        <pre class="" style="white-space: pre-wrap; position: relative; padding-right:30px;" @onclick="async (_)=> await ChangeEditMode(index)">
+                                                            @codeBlockContent
+                                                                                                </pre>
+
+                                                    </div>
+                                                }
+
+
+                                            </div>
+                                            <i class="fa-solid fa-text-slash btn-remove hide" @onclick="(() => RemoveMessage(index))"></i>
+                                        </div>
+                                    }
+
+
+                                    @if (isLoading)
+                                    {
+                                        <div class="loader mt-3"></div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="bottom-section">
+                                <div class="toggle-role-section">
+                                    <div class="label-col">
+                                        <button @onclick="ToggleRole" class="btn ask-question-lable @GetRoleButtonClass(selectedRole)">@selectedRoleDisplayName</button>
+                                    </div>
+                                    <div class="input-container">
+                                        <textarea @bind="message" type="text" class="form-control add-question" id="@newmessageid" @onblur="async (e) => await AddMessage(selectedRole, false)" @oninput="async (e) => await UpdateTextAreaHeight(newmessageid)" @ref="messageTextareaElement" @onkeydown="HandleKeyDown"></textarea>
+                                    </div>
+                                </div>
+                                <div style="display:flex;flex-direction: column;">
+                                    <div class="model-toggle-section">
+                                        <div class="input-container">
+                                            <label class="switch">
+                                                <input type="checkbox" id="model-toggle-switch" @onchange="@(e => ToggleModel(Convert.ToBoolean(e.Value)))">
+                                                <span class="slider round"></span>
+                                            </label>
+                                            <span>@selectedModel</span>
+                                        </div>
+                                    </div>
+
+                                    @if (isLoading)
+                                    {
+                                        <button @onclick="CancelReply" class="btn btn-primary mt-3 ml-3 btn-cancel" >Cancel</button>
+                                    }
+                                    else
+                                    {
+                                        <button @onclick="GetReply" class="btn btn-primary mt-3 ml-3 submit-button" style="background-color: #000;margin-left: 20px;margin-bottom: 20px; font-family: 'Press Start 2P';">Ask Dave</button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <input type="text" id="hiddenInput" style="opacity: 0; height: 0px;" @ref="hiddenInputElement" />
+
+                    </div>
+
+                </article>
+            </main>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+
+
+
+@code {
+
+    public string selectedModel = "gpt-3.5-turbo";
+
+
+    private string systemPrompt = "";
+    private string selectedRole = "user";
+    private string selectedRoleDisplayName = "You";
+    private string message = "";
+    public bool isLoading = false;
+    public List<CustomMessage> messages = new List<CustomMessage>();
+    private bool showErrorPopup = false;
+    private string errorMessage = "";
+    private bool isDarkMode = false;
+    public int codeBlockCount = 0;
+    private ElementReference hiddenInputElement;
+    public bool controlEnter = false;
+    private CancellationTokenSource? cancellationTokenSource;
+    private ElementReference tooltipTarget;
+
+
+    //used for auto scale textarea
+    private ElementReference systemTextareaElement;
+    private ElementReference messageTextareaElement;
+
+
+
+    private void ToggleModel(bool isChecked)
+    {
+        selectedModel = isChecked ? "gpt-4-0613" : "gpt-3.5-turbo-0613";
+    }
+
+    public class CustomMessage
+    {
+        public string Role { get; set; }
+        public string Content { get; set; }
+        public bool EditMode { get; set; }
+
+        public CustomMessage(string role, string content)
+        {
+            Role = role;
+            Content = content;
+            EditMode = false;
+        }
+    }
+
+    private string GetRoleButtonClass(string role)
+    {
+        if (role == "assistant")
+        {
+            selectedRoleDisplayName = "Dave";
+        }
+        else
+        {
+            selectedRoleDisplayName = "You";
+        }
+
+        return role switch
+        {
+            "user" => "btn-user",
+            "assistant" => "btn-assistant",
+            "system" => "btn-system",
+            _ => "btn-secondary",
+        };
+    }
+
+    private async Task AddMessage(string? role, bool execute)
+    {
+        if (!string.IsNullOrEmpty(systemPrompt))
+        {
+            CustomMessage systemKeyPair = new CustomMessage("system", systemPrompt);
+            if (messages.Count == 0 || messages[0].Role != "system")
+            {
+                messages.Insert(0, systemKeyPair);
+            }
+        }
+        if (!string.IsNullOrEmpty(message))
+        {
+            if (messages.Count > 0)
+            {
+                int wordCount = messages.Sum(x => x.Content.Split(' ').Length);
+                if (wordCount >= 3000)
+                {
+                    if (messages[0].Role == "system")
+                    {
+                        messages.RemoveAt(1);
+                    }
+                    else
+                    {
+                        messages.RemoveAt(0);
+                    }
+                }
+            }
+
+            if (role == "assistant" || role == "user")
+            {
+                messages.Add(new CustomMessage(selectedRole, message));
+            }
+            else if (role == "system")
+            {
+                messages.Insert(1, new CustomMessage(selectedRole, message));
+            }
+
+
+
+            if (controlEnter)
+            {
+                GetReply();
+                controlEnter = false;
+            }
+            StateHasChanged();
+            message = "";
+            await JSRuntime.InvokeVoidAsync("resetMessageBox");
+
+        }
+    }
+
+    private async void UpdateMessage(int index)
+    {
+        if (messages[index].EditMode)
+        {
+            messages[index].EditMode = false;
+            string messageid = $"textArea-{index}";
+            await UpdateTextAreaHeight(messageid);
+
+        }
+    }
+
+    private void RemoveMessage(int index)
+    {
+
+        messages.RemoveAt(index);
+    }
+
+    private void ToggleRole()
+    {
+        selectedRole = selectedRole == "user" ? "assistant" : "user";
+    }
+
+    private async void GetReply()
+    {
+        try
+        {
+            cancellationTokenSource = new CancellationTokenSource();
+
+            var conversationList = messages.Select(m => new KeyValuePair<string, string>(m.Role, m.Content)).ToList();
+
+            isLoading = true;
+            var content = await openAiApi.ChatCompletionsAsync(selectedModel, conversationList, cancellationTokenSource.Token);
+            JObject jsonObject = JObject.Parse(content);
+            content = jsonObject["choices"]?[0]?["message"]?["content"]?.ToString() ?? "";
+            messages.Add(new CustomMessage("assistant", content));
+            isLoading = false;
+            StateHasChanged();
+            await HighlightCodeBlocks();
+            await Task.Delay(200);
+            await JSRuntime.InvokeVoidAsync("resetMessageBox");
+        }
+        catch (OperationCanceledException)
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            isLoading = false;
+            errorMessage = "There was an error: " + ex.Message;
+            showErrorPopup = true;
+        }
+    }
+
+
+    private void CloseErrorPopup()
+    {
+        showErrorPopup = false;
+    }
+    private async Task UpdateTextAreaHeight(string id)
+    {
+        await JSRuntime.InvokeVoidAsync("resizeTextArea", id);
+    }
+
+
+    private int GetRowCount(string content)
+    {
+        return content.Split('\n').Length;
+    }
+
+
+    private async Task ChangeEditMode(int index)
+    {
+        messages[index].EditMode = true;
+        StateHasChanged();
+        await Task.Delay(50);
+        string messageid = $"textArea-{index}";
+        await UpdateTextAreaHeight(messageid);
+        await JSRuntime.InvokeVoidAsync("setFocusOnElement", messageid);
+    }
+
+    private int GetTokenCount()
+    {
+        int wordCount = messages.Sum(x => x.Content.Split(' ').Length);
+        int tokenCount = (int)Math.Ceiling(wordCount * 0.75);
+        return tokenCount;
+    }
+
+    private async Task CopyMessageContent(string content)
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", content);
+    }
+
+    private string RenderCodeBlock(string content)
+    {
+        string[] lines = content.Split('\n');
+        StringBuilder sb = new StringBuilder();
+
+        bool inCodeBlock = false;
+        string codeLanguage = "";
+
+
+
+        foreach (string line in lines)
+        {
+            if (line.StartsWith("```"))
+            {
+                codeBlockCount++;
+                inCodeBlock = !inCodeBlock;
+
+                if (inCodeBlock)
+                {
+                    codeLanguage = line.Substring(3).Trim();
+                    sb.AppendLine($"<pre><div class='copy-code-container'><button data-copy-code-button onclick='handleButtonClick(event, {codeBlockCount})' class='copy-code-button'> Copy </button ></div><code id = 'codeBlock{codeBlockCount}' class='hljs'>");
+                }
+                else
+                {
+
+                    sb.AppendLine($"</code></pre>");
+                    codeLanguage = "";
+                }
+            }
+            else
+            {
+                sb.AppendLine(inCodeBlock ? HttpUtility.HtmlEncode(line) : $"<p>{line}</p>");
+            }
+        }
+
+        return sb.ToString();
+    }
+
+
+    public async Task HighlightCodeBlocks()
+    {
+        await JSRuntime.InvokeVoidAsync("highlightAllCodeBlocks");
+    }
+
+    public async Task codeBlockCopy(string codeblockid)
+    {
+        await JSRuntime.InvokeVoidAsync("copyCode", codeblockid);
+    }
+
+    protected async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.CtrlKey && e.Key == "Enter")
+        {
+            controlEnter = true;
+            await hiddenInputElement.FocusAsync(); // Focus on hidden input to defocus the textarea
+
+        }
+    }
+
+    private void CancelReply()
+    {
+        cancellationTokenSource.Cancel();
+    }
+
+
+
+
+}
+
+
+
+
+

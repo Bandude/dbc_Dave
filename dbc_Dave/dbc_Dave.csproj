@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -7,6 +7,22 @@
     <UserSecretsId>aspnet-dbc_Dave-5acaf06e-fedf-43f5-88aa-7da91af39f60</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="wwwroot\css\bootstrap\bootstrap.min.css" />
+    <Content Remove="wwwroot\css\bootstrap\bootstrap.min.css.map" />
+    <Content Remove="wwwroot\css\nord.css" />
+    <Content Remove="wwwroot\css\open-iconic\FONT-LICENSE" />
+    <Content Remove="wwwroot\css\open-iconic\font\css\open-iconic-bootstrap.min.css" />
+    <Content Remove="wwwroot\css\open-iconic\font\fonts\open-iconic.eot" />
+    <Content Remove="wwwroot\css\open-iconic\font\fonts\open-iconic.otf" />
+    <Content Remove="wwwroot\css\open-iconic\font\fonts\open-iconic.svg" />
+    <Content Remove="wwwroot\css\open-iconic\font\fonts\open-iconic.ttf" />
+    <Content Remove="wwwroot\css\open-iconic\font\fonts\open-iconic.woff" />
+    <Content Remove="wwwroot\css\open-iconic\ICON-LICENSE" />
+    <Content Remove="wwwroot\css\open-iconic\README.md" />
+    <Content Remove="wwwroot\css\site.css" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="7.0.10" />
@@ -25,6 +41,32 @@
 
   <ItemGroup>
     <Folder Include="Data\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\assets\background.png" />
+    <None Include="wwwroot\assets\dave.png" />
+    <None Include="wwwroot\assets\dave.psd" />
+    <None Include="wwwroot\assets\navigation\logo-rtis.svg" />
+    <None Include="wwwroot\assets\navigation\logo_ttcu.png" />
+    <None Include="wwwroot\assets\Press_Start_2P.zip" />
+    <None Include="wwwroot\assets\tdave.png" />
+    <None Include="wwwroot\assets\user.png" />
+    <None Include="wwwroot\css\bootstrap\bootstrap.min.css" />
+    <None Include="wwwroot\css\bootstrap\bootstrap.min.css.map" />
+    <None Include="wwwroot\css\nord.css" />
+    <None Include="wwwroot\css\open-iconic\FONT-LICENSE" />
+    <None Include="wwwroot\css\open-iconic\font\css\open-iconic-bootstrap.min.css" />
+    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.eot" />
+    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.otf" />
+    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.svg" />
+    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.ttf" />
+    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.woff" />
+    <None Include="wwwroot\css\open-iconic\ICON-LICENSE" />
+    <None Include="wwwroot\css\open-iconic\README.md" />
+    <None Include="wwwroot\css\site.css" />
+    <None Include="wwwroot\favicon.png" />
+    <None Include="wwwroot\js\textareaAutoResize.js" />
   </ItemGroup>
 
 </Project>

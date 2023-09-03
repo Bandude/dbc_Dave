@@ -202,8 +202,8 @@ textarea:focus::placeholder {
     padding: 5px;
     resize: none;
     margin-right: 5px;
-    color: black;
-    height: 80px;
+    color: #a0a0a0;
+    height: 120px;
     padding-bottom: 20px;
 }
 
@@ -539,3 +539,21 @@ label {
 .form-control:focus{
     border-color:#acabab10;
 }
+.querySelect {
+    font-family: 'PRESS START 2P';
+    color: #6fbfd9;
+    padding: 5px;
+    border-style: dashed;
+    border-width: 4px;
+    border-color: rgb(163 163 163 / 67%);
+    width: 96%;
+    margin-left: 2%;
+}
+    .querySelect:focus-visible {
+        outline: none;
+    }
+    .querySelect option {
+        background-color: #fff;
+        color: #6fbfd9;
+        padding:2px;
+    }

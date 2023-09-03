@@ -5,6 +5,7 @@ using dbc_Dave.Services;
 using dbc_Dave.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using dbc_Dave.Data.Models;
 
 // Initiate and build configuration
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +32,8 @@ builder.Services.AddDbContext<dbc_UsersContext>(options =>
 builder.Services.AddDefaultIdentity<User>()
     .AddEntityFrameworkStores<dbc_UsersContext>();
 
+
+
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication()
     .AddGoogle(options =>
@@ -41,7 +44,7 @@ builder.Services.AddAuthentication()
         options.CallbackPath = new PathString("/ExternalLogin");
     });
 
-
+builder.Services.AddScoped<IRedisService, RedisService>();
 
 // Add singleton services
 builder.Services.AddSingleton<IOpenAI>(provider => new OpenAI(apiKey, provider.GetRequiredService<ILogger<OpenAI>>()));
@@ -54,7 +57,11 @@ builder.Services.AddLogging(configure => configure
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+builder.Services
+    .AddServerSideBlazor()
+    .AddHubOptions(x => x.MaximumReceiveMessageSize = 102400000);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<Utility>();
 
 // Build the application
 var app = builder.Build();

@@ -1,25 +1,83 @@
 ﻿@page "/"
 
+@using Microsoft.AspNetCore.Http;
+@using Microsoft.AspNetCore.Identity;
 @using Newtonsoft.Json.Linq
 @using Newtonsoft.Json.Serialization
 @using System.Linq
+@using Newtonsoft.Json;
+@using dbc_Dave.Data;
+@using dbc_Dave.Data.Models;
 @using dbc_Dave.Services
 @using System.Text
 @using System.Web
 @using System.Threading
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @attribute [Authorize]
 
 
 @inject IJSRuntime JSRuntime
 @inject IOpenAI openAiApi
+@inject IRedisService redis
+@inject Utility Utility
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@code {
 
 
 
-@{
-    string systempromptid = "sysprmpt";
-    string newmessageid = "newmessage";
-    string systemrolename = "system";
+    public string UserName;
+    public dbc_UsersContext _context;
+    public List<string> Queries = new List<string>();
+
+    private string newmessageid = "newmessage";
+    private string systemrolename = "system";
+    private string sysprmptText =
+        "A System Prompt is like setting the stage, enter the overall theme of what you want the AI to behave as. Use 'Act as '\n" +
+        "Act as a professional gardener advising on plant care.\n" +
+        "Act as a psychologist providing strategies for stress management.\n" +
+        "Act as a sleep expert giving tips for better sleep.";
+
+    public string errorMessage;
+    public string systemPrompt = "";
+    public string systempromptid = "sysprmpt";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        UserName = user.Identity?.Name;
+
+        messages = redis.GetOrCreateMessages("current" + UserName);
+
+
+
+    }
+
+    public string selectedModel = "gpt-3.5-turbo";
+    public string selectedRole = "user";
+    public string selectedRoleDisplayName = "You";
+    public string message = "";
+    public bool isLoading = false;
+    public bool isDarkMode = false;
+    public int codeBlockCount = 0;
+    public ElementReference hiddenInputElement;
+    public bool controlEnter = false;
+    public CancellationTokenSource? cancellationTokenSource;
+    public ElementReference tooltipTarget;
+    public List<CustomMessage> messages = new List<CustomMessage>();
+
+    // Used for auto scale textarea
+    public ElementReference systemTextareaElement;
+    public ElementReference messageTextareaElement;
+
+    public bool showErrorPopup = false;
+
+    public string currentQuery;
 }
 
 
@@ -45,14 +103,24 @@
                                     </div>
                                 }
                                 <div class="form-group">
-                                    <label for="systemPrompt">C:\Users\System Prompt> </label>
+                                    <div class="row" style="margin-bottom:20px;">
+                                        <label for="systemPrompt">C:\Users\System Prompt> </label>
+                                        <select class="querySelect">
+                                            @foreach (string option in redis.GetKeys(UserName))
+                                            {
+                                                <option>@option</option>
+                                            }
+                                        </select>
+                                    </div>
+
+
+
                                     <textarea @bind="systemPrompt" type="text" class="form-control add-question" id="@systempromptid"
-                                              placeholder="A System Prompt is like setting the stage, enter the overall theme of what you want the AI to behave as.  Ex 'Excel Expert' or 'fintech expert'"
-                                    @oninput="async (e) => await UpdateTextAreaHeight(systempromptid)" @ref="systemTextareaElement" @onblur="async (e) => await AddMessage(systemrolename, false)"></textarea>
-
-
+                                              placeholder="@sysprmptText"
+                                    @onkeyup="async (e) => await UpdateTextAreaHeight(systempromptid)"
+                                    @onblur="async (e) => await AddMessage(systemrolename, false)">
+                                    </textarea>
                                 </div>
-
                                 <div class="chat-container">
                                     @for (int i = 0; i < messages.Count; i++)
                                     {
@@ -89,7 +157,7 @@
                                                     <div style="display: flex; flex-direction: row;">
                                                         <pre class="" style="white-space: pre-wrap; position: relative; padding-right:30px;" @onclick="async (_)=> await ChangeEditMode(index)">
                                                             @codeBlockContent
-                                                                                                </pre>
+                                                                                                                </pre>
 
                                                     </div>
                                                 }
@@ -129,12 +197,15 @@
 
                                     @if (isLoading)
                                     {
-                                        <button @onclick="CancelReply" class="btn btn-primary mt-3 ml-3 btn-cancel" >Cancel</button>
+                                        <button @onclick="CancelReply" class="btn btn-primary mt-3 ml-3 btn-cancel">Cancel</button>
                                     }
                                     else
                                     {
-                                        <button @onclick="GetReply" class="btn btn-primary mt-3 ml-3 submit-button" style="background-color: #000;margin-left: 20px;margin-bottom: 20px; font-family: 'Press Start 2P';">Ask Dave</button>
+                                        <button @onclick="GetReply" class="btn btn-primary mt-3 ml-3 submit-button" style="background-color: #000;margin-left: 20px;margin-bottom: 5px; font-family: 'Press Start 2P';">Ask Dave</button>
+                                        <button @onclick="SaveConfig" class="btn btn-primary mt-3 ml-3 submit-button" style="background-color: #6fbfd9;margin-left: 20px; font-family: 'Press Start 2P';">Save</button>
+
                                     }
+
                                 </div>
                             </div>
                         </div>
@@ -153,29 +224,6 @@
 
 @code {
 
-    public string selectedModel = "gpt-3.5-turbo";
-
-
-    private string systemPrompt = "";
-    private string selectedRole = "user";
-    private string selectedRoleDisplayName = "You";
-    private string message = "";
-    public bool isLoading = false;
-    public List<CustomMessage> messages = new List<CustomMessage>();
-    private bool showErrorPopup = false;
-    private string errorMessage = "";
-    private bool isDarkMode = false;
-    public int codeBlockCount = 0;
-    private ElementReference hiddenInputElement;
-    public bool controlEnter = false;
-    private CancellationTokenSource? cancellationTokenSource;
-    private ElementReference tooltipTarget;
-
-
-    //used for auto scale textarea
-    private ElementReference systemTextareaElement;
-    private ElementReference messageTextareaElement;
-
 
 
     private void ToggleModel(bool isChecked)
@@ -183,18 +231,25 @@
         selectedModel = isChecked ? "gpt-4-0613" : "gpt-3.5-turbo-0613";
     }
 
-    public class CustomMessage
-    {
-        public string Role { get; set; }
-        public string Content { get; set; }
-        public bool EditMode { get; set; }
 
-        public CustomMessage(string role, string content)
-        {
-            Role = role;
-            Content = content;
-            EditMode = false;
-        }
+    private async void SaveConfig()
+    {
+        var configName = await JSRuntime.InvokeAsync<string>("prompt", "Enter The Config Name:");
+
+        DataQuery query = new DataQuery();
+        query.QueryName = configName;
+        query.QueryText = JsonConvert.SerializeObject(messages);
+        query.UserId = UserName;
+
+
+        await redis.SetValue(configName + ":" + UserName, JsonConvert.SerializeObject(messages), query, UserName);
+    }
+
+    void GetQuery(string currrent)
+    {
+        var currentQuery = currrent;
+        messages = JsonConvert.DeserializeObject<List<CustomMessage>>(redis.GetValue(currentQuery).Result.ToString());
+        StateHasChanged();
     }
 
     private string GetRoleButtonClass(string role)
@@ -265,6 +320,10 @@
             message = "";
             await JSRuntime.InvokeVoidAsync("resetMessageBox");
 
+            await redis.SetValue("current" + UserName, JsonConvert.SerializeObject(messages));
+
+
+
         }
     }
 
@@ -274,7 +333,7 @@
         {
             messages[index].EditMode = false;
             string messageid = $"textArea-{index}";
-            await UpdateTextAreaHeight(messageid);
+            await Utility.UpdateTextAreaHeight(messageid);
 
         }
     }
@@ -283,6 +342,9 @@
     {
 
         messages.RemoveAt(index);
+        redis.SetValue("current" + UserName, JsonConvert.SerializeObject(messages));
+
+
     }
 
     private void ToggleRole()
@@ -308,6 +370,8 @@
             await HighlightCodeBlocks();
             await Task.Delay(200);
             await JSRuntime.InvokeVoidAsync("resetMessageBox");
+            await redis.SetValue("current" + UserName, JsonConvert.SerializeObject(messages));
+
         }
         catch (OperationCanceledException)
         {
@@ -322,11 +386,12 @@
         }
     }
 
-
     private void CloseErrorPopup()
     {
         showErrorPopup = false;
     }
+
+
     private async Task UpdateTextAreaHeight(string id)
     {
         await JSRuntime.InvokeVoidAsync("resizeTextArea", id);

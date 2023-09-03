@@ -1,0 +1,13 @@
+version: '3.4'
+
+services:
+  dbc_dave:
+    image: ${DOCKER_REGISTRY-}dbcdave
+    build:
+      context: .
+      dockerfile: dbc_Dave/Dockerfile
+  
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"

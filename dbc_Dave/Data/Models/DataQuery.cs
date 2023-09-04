@@ -11,15 +11,15 @@ namespace dbc_Dave.Data.Models
         public int Id { get; set; }
 
         [Required]
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
 
         [Required]
         [MaxLength(255)]
-        public string QueryName { get; set; }
+        public string? QueryName { get; set; }
 
         [Required]
         [Column(TypeName = "text")]
-        public string QueryText { get; set; }
+        public string? QueryText { get; set; }
 
 
     }

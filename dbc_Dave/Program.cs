@@ -6,6 +6,8 @@ using dbc_Dave.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using dbc_Dave.Data.Models;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 // Initiate and build configuration
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +23,7 @@ if (environment.IsDevelopment())
 builder.Configuration.AddEnvironmentVariables();
 
 var apiKey = builder.Configuration.GetValue<string>("OpenAi:ApiKey") ?? Environment.GetEnvironmentVariable("OpenAi_ApiKey") ?? "";
+var redishost = builder.Configuration.GetValue<string>("RedisHost") ?? "localhost:6379";
 
 // Set the connection string
 var connectionString = builder.Configuration.GetConnectionString("usersContextConnection") ?? throw new InvalidOperationException("Connection string 'personalAssistantContextConnection' not found.");
@@ -44,7 +47,13 @@ builder.Services.AddAuthentication()
         options.CallbackPath = new PathString("/ExternalLogin");
     });
 
-builder.Services.AddScoped<IRedisService, RedisService>();
+builder.Services.AddScoped<IRedisService>(provider =>
+    new RedisService(
+        redishost,
+        provider.GetRequiredService<dbc_UsersContext>(),
+        provider.GetRequiredService<ILogger<RedisService>>() // Use ILogger<RedisService> or the appropriate ILogger type
+    )
+);
 
 // Add singleton services
 builder.Services.AddSingleton<IOpenAI>(provider => new OpenAI(apiKey, provider.GetRequiredService<ILogger<OpenAI>>()));

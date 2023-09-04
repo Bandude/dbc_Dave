@@ -8,12 +8,10 @@ namespace dbc_Dave.Services
 {
     public interface IRedisService
     {
-
-        Task<string> GetValue(string key);
         Task SetValue(string key, string value, DataQuery? query = null, string? currentUser = null);
-        Task DeleteKey(string key);
-        List<CustomMessage> GetOrCreateMessages(string key);
+        Task<string> GetValue(string key);
         List<string> GetKeys(string currentUser);
-
+        Task<List<CustomMessage>> GetOrCreateMessagesAsync(string key);
+        Task DeleteKey(string key);
     }
 }

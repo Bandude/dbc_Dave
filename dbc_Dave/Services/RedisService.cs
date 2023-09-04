@@ -14,42 +14,42 @@ namespace dbc_Dave.Services
     public class RedisService : IRedisService
     {
         private readonly ConnectionMultiplexer _redisConnection;
-        private readonly UserManager<User> _userManager;
         private  dbc_UsersContext _contextdb;
-
         private readonly ILogger _logger;
 
 
 
-        public RedisService(dbc_UsersContext context)
+        public RedisService(string host, dbc_UsersContext context, ILogger<RedisService> logger)
         {
-            _redisConnection = ConnectionMultiplexer.Connect("redis:6379");
+            _redisConnection = ConnectionMultiplexer.Connect(host);
+            _logger = logger;
             _contextdb = context;
         }
 
-        public List<CustomMessage> GetOrCreateMessages(string key)
+        public async Task<List<CustomMessage>> GetOrCreateMessagesAsync(string key)
         {
             var db = _redisConnection.GetDatabase();
 
-
             // Try to obtain the JSON object from Redis by key
-            var data = db.StringGetAsync(key);
+            var data = await db.StringGetAsync(key);
 
             // If the data exist in Redis, deserialize it to List<CustomMessage>
-            if (data.Result.HasValue)
-            {
-                return JsonConvert.DeserializeObject<List<CustomMessage>>(data.Result.ToString());
+            if (!data.IsNull) { 
+                return JsonConvert.DeserializeObject<List<CustomMessage>>(data.ToString());
             }
-
-            // If the data does not exist in Redis, create a new list
-            List<CustomMessage> messages = new List<CustomMessage>();
-            return messages;
+            else
+            {
+                // If the data does not exist in Redis, create a new list
+                List<CustomMessage> messages = new List<CustomMessage>();
+                return messages;
+            }
+         
         }
 
         public async Task SetValue(string key, string value, DataQuery? query = null, string? currentUser = null )
         {
             var db = _redisConnection.GetDatabase();
-            await db.StringSetAsync(key, value);
+            await db.StringSetAsync(key, value, TimeSpan.FromSeconds(30));
             
             if(query != null) { 
                 DataQuery currentQuery = _contextdb.Queries.Where(x => x.UserId == currentUser && x.QueryName == query.QueryName).FirstOrDefault();
@@ -72,7 +72,30 @@ namespace dbc_Dave.Services
         public async Task<string> GetValue(string key)
         {
             var db = _redisConnection.GetDatabase();
-            return await db.StringGetAsync(key);
+            var response = await db.StringGetAsync(key);
+            if (response.IsNullOrEmpty)
+            {
+                string[] splt = key.Split(':');
+                var queryName = splt[0];
+                var username = splt[1];
+
+                string? json = _contextdb.Queries.Where(q =>  q.QueryName == queryName && q.UserId == username).Select(m => m.QueryText).FirstOrDefault()?.ToString();
+
+                if (json != null)
+                {
+                    await SetValue(key, json); //save to cache if not there
+                    return await db.StringGetAsync(key);
+                }
+                else
+                {
+                    throw new Exception("Redis | GetValue: Error");
+                }
+            }
+            else
+            {
+                return await db.StringGetAsync(key);
+            }
+            
         }
 
         public async Task DeleteKey(string key)
@@ -83,8 +106,8 @@ namespace dbc_Dave.Services
 
         public List<string> GetQueryNames(string currentUser)
         {
-            
-            return _contextdb.Queries.Where(x => x.UserId == currentUser).Select(y => y.QueryName).ToList();
+
+            return _contextdb.Queries.Where(x => x.UserId == currentUser).Select(y => y.QueryName).OrderBy(queryName => queryName).ToList();
         }
 
         public List<string> GetKeys(string currentUser)

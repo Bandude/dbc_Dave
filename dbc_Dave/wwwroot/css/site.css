@@ -546,8 +546,8 @@ label {
     border-style: dashed;
     border-width: 4px;
     border-color: rgb(163 163 163 / 67%);
-    width: 96%;
-    margin-left: 2%;
+    width: 98%;
+    margin-left: 12px;
 }
     .querySelect:focus-visible {
         outline: none;

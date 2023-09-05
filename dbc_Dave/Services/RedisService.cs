@@ -49,7 +49,7 @@ namespace dbc_Dave.Services
         public async Task SetValue(string key, string value, DataQuery? query = null, string? currentUser = null )
         {
             var db = _redisConnection.GetDatabase();
-            await db.StringSetAsync(key, value, TimeSpan.FromSeconds(30));
+            await db.StringSetAsync(key, value, TimeSpan.FromHours(1));
             
             if(query != null) { 
                 DataQuery currentQuery = _contextdb.Queries.Where(x => x.UserId == currentUser && x.QueryName == query.QueryName).FirstOrDefault();

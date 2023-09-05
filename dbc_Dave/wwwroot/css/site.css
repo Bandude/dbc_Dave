@@ -10,14 +10,18 @@ html, body {
 }
 p {
     font-family: 'Kumbh Sans', sans-serif !important;
+    margin-bottom: -1rem;
 }
 
-a, .btn-link {
-    color: #0366d6;
+:focus-visible {
+    outline: none;
 }
 
-p {
-    margin-bottom: -.5rem
+
+
+.bg-primary {
+    background-color: #6fbfd9 !important;
+    color: white;
 }
 
 .btn-primary {
@@ -536,6 +540,17 @@ label {
     margin-bottom: 20px;
 }
 
+.login-button {
+    background-color: #6fbfd9;
+    color: #fff;
+    font-family: 'Press Start 2P';
+}
+.register-button {
+    background-color: #000;
+    color: #6fbfd9;
+    font-family: 'Press Start 2P';
+}
+
 .form-control:focus{
     border-color:#acabab10;
 }
@@ -556,4 +571,168 @@ label {
         background-color: #fff;
         color: #6fbfd9;
         padding:2px;
+    }
+
+ul {
+    list-style-type: none;
+    padding-top: 30px;
+}
+
+    ul li {
+        margin-bottom: 10px;
+    }
+
+        ul li a {
+            color: #6fbfd9;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+            ul li a::before {
+                content: "";
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                background: #6fbfd9;
+                margin-right: 5px;
+                border-radius: 50%;
+            }
+
+            ul li a:hover {
+                color: rgb(163 163 163 / 67%); /* Change to the desired hover color */
+            }
+
+
+
+
+
+/*Floppy Disk*/
+.image {
+    position: relative;
+    left: 50%;
+    top: 20%;
+    margin-top: 0px;
+    margin-left: -115px;
+    text-align: center;
+    margin-bottom:40%;
+}
+
+.floppyDisk {
+    position: absolute;
+    top: 70px;
+    left: 70px;
+    width: 100px;
+    height: 105px;
+    background-color: #6fbfd9;
+    position: absolute;
+    border: 2px solid black;
+    border-radius: 2.5px 10px 2.5px 2.5px;
+    box-shadow: 0 7.5px 10px -5px rgba(0,0,0,0.5);
+}
+
+    .floppyDisk:before {
+        content: '';
+        position: absolute;
+        width: 5.5px;
+        height: 5px;
+        background-color: #FFFFF2;
+        border: 1px solid black;
+        border-radius: 1.5px;
+        top: 92.5px;
+        left: 1.5px;
+    }
+
+    .floppyDisk:after {
+        content: '';
+        position: absolute;
+        width: 6px;
+        height: 5px;
+        background-color: #FFFFF2;
+        border: 1px solid black;
+        border-radius: 3.5px;
+        top: 92.5px;
+        left: 90px;
+    }
+
+.floppyLabel {
+    position: absolute;
+    width: 70px;
+    height: 60px;
+    border-radius: 7.5px 7.5px 0 0;
+    top: 116px;
+    left: 86.5px;
+}
+
+    .floppyLabel:before {
+        content: '';
+        position: absolute;
+        width: 64px;
+        height: 51px;
+        background-color: #FFFFF2;
+        border: 0.5px solid black;
+        border-radius: 7.5px;
+        top: 5px;
+        left: 2.5px;
+    }
+
+    .floppyLabel::after {
+        content: 'Dave';
+        position: absolute;
+        text-align: center;
+        text-transform: uppercase;
+        word-wrap: break-word;
+        font-family: 'Press Start 2P', cursive;
+        width: 60px;
+        font-weight: 700;
+        top: 17.5px;
+        left: 5.5px;
+        font-size: 10px;
+        line-height: 15px;
+        color: #484848;
+    }
+
+.floppySlide {
+    width: 67.5px;
+    height: 40px;
+    background-color: #484848;
+    position: relative;
+    border-radius: 0 0 4px 4px;
+    left: 85px;
+    top: 71px;
+    border: 1px solid black;
+}
+
+    .floppySlide::before {
+        content: '';
+        width: 60px;
+        height: 41px;
+        background-color: lightgrey;
+        position: absolute;
+        border-radius: 0 0 4px 4px;
+        left: 10px;
+        top: -1px;
+        border: 1px solid black;
+        box-shadow: 0 0.5px 1.5px rgba(0,0,0,0.12), 0 0.5px 1px rgba(0,0,0,0.24);
+    }
+
+    .floppySlide:hover:before {
+        left: -0.5px;
+        transition: all 0.3s;
+    }
+
+    .floppySlide::after {
+        content: '';
+        width: 15px;
+        height: 30px;
+        background-color: #484848;
+        border: 0.5px solid black;
+        border-radius: 1px;
+        position: absolute;
+        left: 45px;
+        top: 5px;
+    }
+
+    .floppySlide:hover:after {
+        left: 35px;
+        transition: all 0.3s;
     }

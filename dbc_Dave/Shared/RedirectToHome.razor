@@ -1,0 +1,14 @@
+﻿@page "/RedirectToHome"
+@using Microsoft.AspNetCore.Components
+
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            NavigationManager.NavigateTo("home");
+        }
+    }
+}

@@ -383,7 +383,7 @@
                     messages.Insert(0, systemKeyPair);
                 }
             }
-   
+
         }
         if (!string.IsNullOrEmpty(message))
         {
@@ -565,7 +565,11 @@
             }
             else
             {
-                sb.AppendLine(inCodeBlock ? HttpUtility.HtmlEncode(line) : $"<p>{line}</p>");
+                if(line != "")
+                {
+                    sb.AppendLine(inCodeBlock ? HttpUtility.HtmlEncode(line) : $"<p class=\"aiText\">{line}</p>");
+                } 
+               
             }
         }
 

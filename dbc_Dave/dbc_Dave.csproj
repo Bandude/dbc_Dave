@@ -6,7 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-dbc_Dave-5acaf06e-fedf-43f5-88aa-7da91af39f60</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <AspNetCoreHttpsPort>443</AspNetCoreHttpsPort>
+    <UserSecretsId>davefb98c226-78e2-41b3-898f-a4e19aeb8b81</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,27 +22,5 @@
     <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="wwwroot\assets\background.png" />
-    <None Include="wwwroot\assets\dave.png" />
-    <None Include="wwwroot\assets\dave.psd" />
-    <None Include="wwwroot\assets\Press_Start_2P.zip" />
-    <None Include="wwwroot\assets\tdave.png" />
-    <None Include="wwwroot\assets\user.png" />
-    <None Include="wwwroot\css\bootstrap\bootstrap.min.css" />
-    <None Include="wwwroot\css\bootstrap\bootstrap.min.css.map" />
-    <None Include="wwwroot\css\nord.css" />
-    <None Include="wwwroot\css\open-iconic\FONT-LICENSE" />
-    <None Include="wwwroot\css\open-iconic\font\css\open-iconic-bootstrap.min.css" />
-    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.eot" />
-    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.otf" />
-    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.svg" />
-    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.ttf" />
-    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.woff" />
-    <None Include="wwwroot\css\open-iconic\ICON-LICENSE" />
-    <None Include="wwwroot\css\open-iconic\README.md" />
-    <None Include="wwwroot\css\site.css" />
-    <None Include="wwwroot\favicon.png" />
-  </ItemGroup>
 
 </Project>

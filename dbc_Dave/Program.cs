@@ -8,19 +8,30 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using dbc_Dave.Data.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Identity.Client;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OAuth;
+
 public class Program
 {
     public static void Main(string[] args)
     {
+
+
         // Initiate and build configuration
         var builder = WebApplication.CreateBuilder(args);
         var environment = builder.Environment;
+
 
         // Add environment-specific configuration sources
         if (environment.IsDevelopment())
         {
             builder.Configuration.AddJsonFile("appsettings.Development.json", optional: true);
         }
+
+        
 
         // Add environment variables configuration source
         builder.Configuration.AddEnvironmentVariables();
@@ -48,7 +59,9 @@ public class Program
                 options.ClientId = googleAuthNSection["ClientId"] ?? "";
                 options.ClientSecret = googleAuthNSection["ClientSecret"] ?? "";
                 options.CallbackPath = new PathString("/ExternalLogin");
+               
             });
+
 
         builder.Services.AddScoped<IRedisService>(provider =>
             new RedisService(
@@ -64,7 +77,7 @@ public class Program
         // Add logging 
         builder.Services.AddLogging(configure => configure
                     .AddConsole() // Use the console logger.
-                    .SetMinimumLevel(LogLevel.Error) // Set the minimum log level.
+                    .SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Error) // Set the minimum log level.
                 );
 
         // Add services to the container.
@@ -73,29 +86,33 @@ public class Program
             .AddServerSideBlazor()
             .AddHubOptions(x => x.MaximumReceiveMessageSize = 102400000);
         builder.Services.AddHttpContextAccessor();
+        builder.Services.AddHttpClient();
         builder.Services.AddScoped<Utility>();
+
+
 
         // Build the application
         var app = builder.Build();
-
-        // Configure the HTTP request pipeline.
-        if (!app.Environment.IsDevelopment())
-        {
-            app.UseExceptionHandler("/Error");
-            app.UseHsts(); // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-        }
-
+ 
         app.UseHttpsRedirection();
+
+
+
         app.UseStaticFiles();
+
+
         app.UseRouting();
 
         // Set up endpoints
         app.MapBlazorHub();
         app.MapFallbackToPage("/_Host");
+
         app.UseAuthentication();
         app.UseAuthorization();
 
         // Run the application
         app.Run();
     }
+
 }
+

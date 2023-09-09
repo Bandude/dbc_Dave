@@ -40,11 +40,16 @@ public class Program
         var redishost = builder.Configuration.GetValue<string>("RedisHost") ?? "localhost:6379";
 
         // Set the connection string
-        var connectionString = builder.Configuration.GetConnectionString("usersContextConnection") ?? throw new InvalidOperationException("Connection string 'personalAssistantContextConnection' not found.");
+        var connectionString = builder.Configuration.GetConnectionString("usersContextConnection") ?? throw new InvalidOperationException("Connection string 'usersContextConnection' not found.");
 
         builder.Services.AddDbContext<dbc_UsersContext>(options =>
             options.UseSqlServer(connectionString));
 
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+        });
 
         builder.Services.AddDefaultIdentity<User>()
             .AddEntityFrameworkStores<dbc_UsersContext>();
@@ -52,16 +57,27 @@ public class Program
 
 
         builder.Services.AddAuthorization();
-        builder.Services.AddAuthentication()
-            .AddGoogle(options =>
-            {
-                IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
-                options.ClientId = googleAuthNSection["ClientId"] ?? "";
-                options.ClientSecret = googleAuthNSection["ClientSecret"] ?? "";
-                options.CallbackPath = new PathString("/ExternalLogin");
-               
-            });
+        builder.Services.AddAuthentication();
+        //builder.Services.AddAuthentication()
+        //    .AddGoogle(options =>
+        //    {
+        //        IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
+        //        options.ClientId = googleAuthNSection["ClientId"] ?? "";
+        //        options.ClientSecret = googleAuthNSection["ClientSecret"] ?? "";
+        //        options.CallbackPath = new PathString("/ExternalLogin");
 
+        //    });
+
+
+        if (environment.IsProduction())
+        {
+            builder.Services.AddHsts(options =>
+            {
+                options.Preload = true;
+                options.IncludeSubDomains = true;
+                options.MaxAge = TimeSpan.FromDays(60);
+            });
+        }
 
         builder.Services.AddScoped<IRedisService>(provider =>
             new RedisService(
@@ -90,12 +106,27 @@ public class Program
         builder.Services.AddScoped<Utility>();
 
 
-
+        builder.Services.Configure<CookiePolicyOptions>(options =>
+        {
+            options.CheckConsentNeeded = context => true;
+            options.MinimumSameSitePolicy = SameSiteMode.None;
+            options.Secure = CookieSecurePolicy.Always;
+        });
         // Build the application
         var app = builder.Build();
- 
+
+
+
+        app.UseCookiePolicy();
+
+
+        if (environment.IsProduction())
+        {
+            app.UseHsts();
+        }
         app.UseHttpsRedirection();
 
+        app.UseForwardedHeaders();
 
 
         app.UseStaticFiles();
@@ -109,6 +140,7 @@ public class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
+
 
         // Run the application
         app.Run();

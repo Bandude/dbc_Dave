@@ -43,6 +43,18 @@ p {
     .btn-primary:active {
         background-color: #6fbfd9;
     }
+
+.btn-new {
+    color: #fff;
+    background-color: silver;
+    border-color: #1861ac;
+    font-family: 'Press Start 2P'
+}
+
+
+    .btn-primary:active {
+        background-color: #6fbfd9;
+    }
 .btn-danger {
     font-family: 'Press Start 2P';
     font-size: .8em;

@@ -38,12 +38,10 @@ public class Program
 
         var apiKey = builder.Configuration.GetValue<string>("OpenAi:ApiKey") ?? Environment.GetEnvironmentVariable("OpenAi_ApiKey") ?? "";
         var redishost = builder.Configuration.GetValue<string>("RedisHost") ?? "localhost:6379";
-
+        
         // Set the connection string
         var connectionString = builder.Configuration.GetConnectionString("usersContextConnection") ?? throw new InvalidOperationException("Connection string 'usersContextConnection' not found.");
-
-        builder.Services.AddDbContext<dbc_UsersContext>(options =>
-            options.UseSqlServer(connectionString));
+        builder.Services.AddDbContextFactory<dbc_UsersContext>(options => options.UseSqlServer(connectionString));
 
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
@@ -79,13 +77,18 @@ public class Program
             });
         }
 
+
+
+
+        builder.Services.AddDbContextFactory<dbc_UsersContext>();
         builder.Services.AddScoped<IRedisService>(provider =>
             new RedisService(
                 redishost,
-                provider.GetRequiredService<dbc_UsersContext>(),
+                provider.GetRequiredService<IDbContextFactory<dbc_UsersContext>>(),
                 provider.GetRequiredService<ILogger<RedisService>>() // Use ILogger<RedisService> or the appropriate ILogger type
             )
         );
+
 
         // Add singleton services
         builder.Services.AddSingleton<IOpenAI>(provider => new OpenAI(apiKey, provider.GetRequiredService<ILogger<OpenAI>>()));

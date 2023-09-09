@@ -15,7 +15,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
-    
+
 
 @attribute [Authorize]
 
@@ -38,7 +38,7 @@
     public string currentQuery = "New...";
 
     private string newmessageid = "newmessage";
-   
+
     private string systemrolename = "system";
     private string sysprmptText =
         "A System Prompt is like setting the stage, enter the overall theme of what you want the AI to behave as. Use 'Act as '\n" +
@@ -110,15 +110,33 @@
                                     </div>
                                 }
                                 <div class="form-group">
-                                    <div class="flex flex-column" style="margin-bottom:20px;" >
+                                    <div class="flex flex-column" style="margin-bottom:20px;">
                                         <label for="systemPrompt">C:\Users\System Prompt> @currentQuery</label>
-                                        <select class="querySelect" @onchange="GetQuery">
-                                            <option value="New...">New... (click here for saved)</option>
-                                            @foreach (string option in redis.GetKeys(UserName).OrderBy(option => option))
+                                        <!-- Button -->
+                                        <button id="toggleButton" class="btn btn-primary" onclick="showGrid()">Load</button>
+                                        <!-- Grid of cards hidden by default -->
+                                        <div class="row d-none p-5" id="cardGrid">
+                                            @if (redis.GetKeys(UserName).Any())
                                             {
-                                                <option value="@option">@option</option>
+                                                foreach (string option in redis.GetKeys(UserName).OrderBy(option => option))
+                                                {
+                                                    <div class="col-lg-4 col-md-6 mb-4">
+                                                        <div class="card h-100">
+                                                            <div class="card-body d-flex flex-column">
+                                                                <h5 class="card-title text-center mb-3">@option</h5>
+                                                                <div class="mt-auto">
+                                                                    <button class="btn btn-danger d-block mx-auto" @onclick="() => DeleteQuery(option)"><i class="fa fa-trash"></i> Delete</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
                                             }
-                                        </select>
+                                            else
+                                            {
+                                                <p>No saved queries</p>
+                                            }
+                                        </div>
                                     </div>
 
 
@@ -130,7 +148,7 @@
                                     </textarea>
                                 </div>
                                 <div class="chat-container">
-                                    @if(messages != null) //if nothing in cache
+                                    @if (messages != null) //if nothing in cache
                                     {
                                         @for (int i = 0; i < messages.Count; i++)
                                         {
@@ -167,7 +185,7 @@
                                                         <div style="display: flex; flex-direction: row;">
                                                             <pre class="" style="white-space: pre-wrap; position: relative; padding-right:30px;" @onclick="async (_)=> await ChangeEditMode(index)">
                                                                 @codeBlockContent
-                                                                                                                            </pre>
+                                                                                                                                        </pre>
 
                                                         </div>
                                                     }
@@ -178,7 +196,7 @@
                                             </div>
                                         }
                                     }
-         
+
 
 
                                     @if (isLoading)
@@ -244,6 +262,18 @@
     }
 
 
+    private async Task DeleteQuery(string option)
+    {
+        try
+        {
+            await redis.DeleteQuery(option, UserName);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message.ToString());
+        }
+    }
+
     private async void SaveConfig()
     {
 
@@ -258,7 +288,7 @@
                 // User chose not to overwrite, return without saving
                 var configName = await JSRuntime.InvokeAsync<string>("prompt", "Enter The Config Name:");
 
-                while(configName == "")
+                while (configName == "")
                 {
                     configName = await JSRuntime.InvokeAsync<string>("prompt", "You can not enter an empty name, press cancel or provide a valid name:");
                 }
@@ -321,6 +351,8 @@
             await redis.SetValue(configName + ":" + UserName, JsonConvert.SerializeObject(messages), query, UserName);
         }
 
+        StateHasChanged();
+
     }
 
 
@@ -371,7 +403,7 @@
         if (!string.IsNullOrEmpty(systemPrompt))
         {
             CustomMessage systemKeyPair = new CustomMessage("system", systemPrompt);
-            if(messages == null)
+            if (messages == null)
             {
                 //var messages = await redis.GetOrCreateMessagesAsync("current" + UserName);
 
@@ -565,11 +597,11 @@
             }
             else
             {
-                if(line != "")
+                if (line != "")
                 {
                     sb.AppendLine(inCodeBlock ? HttpUtility.HtmlEncode(line) : $"<p class=\"aiText\">{line}</p>");
-                } 
-               
+                }
+
             }
         }
 

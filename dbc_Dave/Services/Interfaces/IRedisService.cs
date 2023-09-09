@@ -12,6 +12,6 @@ namespace dbc_Dave.Services
         Task<string> GetValue(string key);
         List<string> GetKeys(string currentUser);
         Task<List<CustomMessage>> GetOrCreateMessagesAsync(string key);
-        Task DeleteKey(string key);
+        Task DeleteQuery(string queryName, string currentUser);
     }
 }

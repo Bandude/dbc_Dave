@@ -3,6 +3,7 @@ using dbc_Dave.Data;
 using dbc_Dave.Data.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.CodeAnalysis.Differencing;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 using System;
@@ -14,16 +15,15 @@ namespace dbc_Dave.Services
     public class RedisService : IRedisService
     {
         private readonly ConnectionMultiplexer _redisConnection;
-        private  dbc_UsersContext _contextdb;
         private readonly ILogger _logger;
+        private readonly IDbContextFactory<dbc_UsersContext> _contextFactory;
 
-
-
-        public RedisService(string host, dbc_UsersContext context, ILogger<RedisService> logger)
+        public RedisService(string host, IDbContextFactory<dbc_UsersContext> contextFactory, ILogger<RedisService> logger)
         {
             _redisConnection = ConnectionMultiplexer.Connect(host);
             _logger = logger;
-            _contextdb = context;
+            _contextFactory = contextFactory;
+
         }
 
         public async Task<List<CustomMessage>> GetOrCreateMessagesAsync(string key)
@@ -50,21 +50,22 @@ namespace dbc_Dave.Services
         {
             var db = _redisConnection.GetDatabase();
             await db.StringSetAsync(key, value, TimeSpan.FromHours(1));
-            
-            if(query != null) { 
-                DataQuery currentQuery = _contextdb.Queries.Where(x => x.UserId == currentUser && x.QueryName == query.QueryName).FirstOrDefault();
+            using var context = _contextFactory.CreateDbContext();
+
+            if (query != null) { 
+                DataQuery currentQuery = context.Queries.Where(x => x.UserId == currentUser && x.QueryName == query.QueryName).FirstOrDefault();
                 if(currentQuery != null) {
                     currentQuery.QueryText = query.QueryText;
                     currentQuery.QueryName = query.QueryName;
                     currentQuery.UserId = query.UserId;
-                    _contextdb.Queries.Update(currentQuery);
+                    context.Queries.Update(currentQuery);
                 }
                 else
                 {
-                    _contextdb.Queries.Add(query);
+                    context.Queries.Add(query);
                 }
                 
-                await _contextdb.SaveChangesAsync();
+                await context.SaveChangesAsync();
             }
 
             }
@@ -73,13 +74,15 @@ namespace dbc_Dave.Services
         {
             var db = _redisConnection.GetDatabase();
             var response = await db.StringGetAsync(key);
+            using var context = _contextFactory.CreateDbContext();
+
             if (response.IsNullOrEmpty)
             {
                 string[] splt = key.Split(':');
                 var queryName = splt[0];
                 var username = splt[1];
 
-                string? json = _contextdb.Queries.Where(q =>  q.QueryName == queryName && q.UserId == username).Select(m => m.QueryText).FirstOrDefault()?.ToString();
+                string? json = context.Queries.Where(q =>  q.QueryName == queryName && q.UserId == username).Select(m => m.QueryText).FirstOrDefault()?.ToString();
 
                 if (json != null)
                 {
@@ -98,21 +101,41 @@ namespace dbc_Dave.Services
             
         }
 
-        public async Task DeleteKey(string key)
+        public async Task DeleteQuery(string queryName, string currentUser)
         {
+            using var context = _contextFactory.CreateDbContext();
+
+            // Get the Query object
+            var entry = await context.Queries
+                .Where(x => x.UserId == currentUser && x.QueryName == queryName)
+                .FirstOrDefaultAsync();
+            // If Query exists, delete it
+            if (entry != null)
+            {
+                context.Queries.Remove(entry);
+                await context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new Exception("Query not found");
+            }
+
+            // Delete from Redis as well if exists
+            var key = queryName + ":" + currentUser;
             var db = _redisConnection.GetDatabase();
             await db.KeyDeleteAsync(key);
         }
 
         public List<string> GetQueryNames(string currentUser)
         {
-
-            return _contextdb.Queries.Where(x => x.UserId == currentUser).Select(y => y.QueryName).OrderBy(queryName => queryName).ToList();
+            using var context = _contextFactory.CreateDbContext();
+            return context.Queries.Where(x => x.UserId == currentUser).Select(y => y.QueryName).OrderBy(queryName => queryName).ToList();
         }
 
         public List<string> GetKeys(string currentUser)
         {
-            return _contextdb.Queries.Where(x => x.UserId == currentUser).Select(y => y.QueryName).ToList();
+            using var context = _contextFactory.CreateDbContext();
+            return context.Queries.Where(x => x.UserId == currentUser).Select(y => y.QueryName).ToList();
         }
 
     }

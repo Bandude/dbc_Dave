@@ -430,7 +430,7 @@
             if (messages.Count > 0)
             {
                 int wordCount = messages.Sum(x => x.Content.Split(' ').Length);
-                if (wordCount >= 3000)
+                if (wordCount >= 7000)
                 {
                     if (messages[0].Role == "system")
                     {

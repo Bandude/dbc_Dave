@@ -93,3 +93,11 @@ function showGrid() {
 window.confirmDelete = () => {
     return confirm("Are you sure you want to delete this?");
 }
+
+
+function clearTextarea(elementId) {
+    const textarea = document.getElementById(elementId);
+    if (textarea) {
+        textarea.value = ''; // Reset the textarea content.
+    }
+}

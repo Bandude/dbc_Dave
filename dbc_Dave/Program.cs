@@ -92,6 +92,9 @@ public class Program
 
         // Add singleton services
         builder.Services.AddSingleton<IOpenAI>(provider => new OpenAI(apiKey, provider.GetRequiredService<ILogger<OpenAI>>()));
+        builder.Services.AddSingleton<AssistantService>(provider => new AssistantService(apiKey, provider.GetRequiredService<ILogger<AssistantService>>()));
+        builder.Services.AddSingleton<ThreadService>(provider => new ThreadService(apiKey, provider.GetRequiredService<ILogger<ThreadService>>()));
+        builder.Services.AddSingleton<MessageService>(provider => new MessageService(apiKey, provider.GetRequiredService<ILogger<MessageService>>()));
         builder.Services.AddSingleton<IEmailSender, DummyEmailSender>();
         // Add logging 
         builder.Services.AddLogging(configure => configure

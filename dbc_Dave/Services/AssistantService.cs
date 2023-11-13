@@ -21,9 +21,11 @@ namespace dbc_Dave.Services
             _apiKey = apiKey;
             _httpClient = new HttpClient
             {
-                BaseAddress = new Uri("https://api.openai.com/v1/")
+                BaseAddress = new Uri("https://api.openai.com/v1/"),
+       
             };
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            _httpClient.DefaultRequestHeaders.Add("OpenAI-Beta", "assistants=v1");
             _logger = logger;
 
             if (string.IsNullOrWhiteSpace(apiKey))
@@ -200,82 +202,83 @@ namespace dbc_Dave.Services
             }
         }
 
-        public class Assistant
-        {
-            [JsonProperty("id")]
-            public string Id { get; set; }
+      
 
-            [JsonProperty("object")]
-            public string ObjectType { get; set; }
+    }
+    public class Assistant
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; }
 
-            [JsonProperty("created_at")]
-            public long CreatedAt { get; set; }
+        [JsonProperty("object")]
+        public string ObjectType { get; set; }
 
-            [JsonProperty("name")]
-            public string Name { get; set; }
+        [JsonProperty("created_at")]
+        public long CreatedAt { get; set; }
 
-            [JsonProperty("description", NullValueHandling = NullValueHandling.Ignore)]
-            public string Description { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; }
 
-            [JsonProperty("model")]
-            public string Model { get; set; }
+        [JsonProperty("description", NullValueHandling = NullValueHandling.Ignore)]
+        public string Description { get; set; }
 
-            [JsonProperty("instructions")]
-            public string Instructions { get; set; }
+        [JsonProperty("model")]
+        public string Model { get; set; }
 
-            [JsonProperty("tools")]
-            public List<Tool> Tools { get; set; }
+        [JsonProperty("instructions")]
+        public string Instructions { get; set; }
 
-            [JsonProperty("file_ids", NullValueHandling = NullValueHandling.Ignore)]
-            public List<string> FileIds { get; set; }
+        [JsonProperty("tools")]
+        public List<Tool> Tools { get; set; }
 
-            [JsonProperty("metadata", NullValueHandling = NullValueHandling.Ignore)]
-            public object Metadata { get; set; }
+        [JsonProperty("file_ids", NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> FileIds { get; set; }
 
-            [JsonProperty("deleted", NullValueHandling = NullValueHandling.Ignore)]
-            public bool? Deleted { get; set; }
-        }
+        [JsonProperty("metadata", NullValueHandling = NullValueHandling.Ignore)]
+        public object Metadata { get; set; }
 
-        public class Tool
-        {
-            [JsonProperty("type")]
-            public string Type { get; set; }
-        }
+        [JsonProperty("deleted", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? Deleted { get; set; }
+    }
 
-        public class AssistantList
-        {
-            [JsonProperty("object")]
-            public string ObjectType { get; set; }
+    public class Tool
+    {
+        [JsonProperty("type")]
+        public string Type { get; set; }
+    }
 
-            [JsonProperty("data")]
-            public List<Assistant> Data { get; set; }
+    public class AssistantList
+    {
+        [JsonProperty("object")]
+        public string ObjectType { get; set; }
 
-            [JsonProperty("has_more")]
-            public bool HasMore { get; set; }
-        }
+        [JsonProperty("data")]
+        public List<Assistant> Data { get; set; }
 
-        public class AssistantFile
-        {
-            [JsonProperty("id")]
-            public string Id { get; set; }
+        [JsonProperty("has_more")]
+        public bool HasMore { get; set; }
+    }
 
-            [JsonProperty("object")]
-            public string ObjectType { get; set; }
+    public class AssistantFile
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; }
 
-            // Additional properties can be included here as needed
-        }
+        [JsonProperty("object")]
+        public string ObjectType { get; set; }
 
-        public class AssistantFileDeleted
-        {
-            [JsonProperty("id")]
-            public string Id { get; set; }
+        // Additional properties can be included here as needed
+    }
 
-            [JsonProperty("object")]
-            public string ObjectType { get; set; }
+    public class AssistantFileDeleted
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; }
 
-            [JsonProperty("deleted")]
-            public bool Deleted { get; set; }
-        }
+        [JsonProperty("object")]
+        public string ObjectType { get; set; }
 
+        [JsonProperty("deleted")]
+        public bool Deleted { get; set; }
     }
 }

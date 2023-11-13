@@ -1,0 +1,185 @@
+﻿@page "/assistants"
+@using dbc_Dave.Services;
+@using Newtonsoft.Json;
+@using dbc_Dave.Data.Models;
+@inject IJSRuntime JSRuntime
+@inject IOpenAI openai
+@inject AssistantService AssistantService
+
+
+<h3>Assistant List</h3>
+@if (assistantsList == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr><th>Name</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var assistant in assistantsList.Data)
+            {
+                <tr>
+                    <td>@assistant.Name</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => EditAssistant(assistant.Id)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteAssistant(assistant.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Button to trigger modal -->
+    <button class="btn btn-success" @onclick="() => ShowCreateAssistantModal()">Create New Assistant</button>
+
+    <!-- Modal -->
+    @if (showNewAssistant)
+    {
+        <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Create New Assistant</h5>
+                        <button type="button" class="btn-close" @onclick="CloseFullscreenModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <select class="form-control mb-2" @onchange="OnModelSelected">
+                            @foreach (var model in modelsList.Data)
+                            {
+                                <option value="@model.Id">@model.Id</option>
+                            }
+                        </select>
+                        <input type="text" class="form-control mb-2" placeholder="Assistant Name" @bind="newAssistantName" />
+                        <textarea class="form-control mb-2" placeholder="Instructions" @bind="newAssistantInstructions"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseFullscreenModal">Cancel</button>
+                        <button type="button" class="btn btn-primary" @onclick="CreateAssistant">Create</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (showEditAssistant)
+    {
+        <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
+            <div class="modal-dialog modal-fullscreen">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Update Assistant</h5>
+                        <button type="button" class="btn-close" @onclick="CloseFullscreenModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label></label>
+                        <input type="text" class="form-control mb-2" placeholder="Model" @bind="newAssistantModel" />
+                        <input type="text" class="form-control mb-2" placeholder="Assistant Name" @bind="newAssistantName" />
+                        <textarea class="form-control mb-2" placeholder="Instructions" @bind="newAssistantInstructions"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseFullscreenModal">Cancel</button>
+                        <button type="button" class="btn btn-primary" @onclick="() => SaveAssistant(AssistantID)">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+}
+
+@code {
+    private AssistantList assistantsList;
+    private bool showNewAssistant = false;
+    private bool showEditAssistant = false;
+    private string newAssistantName = String.Empty;
+    private string newAssistantInstructions = String.Empty;
+    private string newAssistantModel = String.Empty;
+    private string AssistantID = String.Empty;
+    private List<Tool> newAssistantTools = new List<Tool>();
+    private string selectedModelId; // For binding the selected model ID
+    private ModelsList modelsList = new ModelsList();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        assistantsList = await AssistantService.ListAssistantsAsync();
+        modelsList = await GetModelData();
+        selectedModelId = modelsList.Data.FirstOrDefault()?.Id; // Set the first model as default
+    }
+
+    private async Task ShowCreateAssistantModal()
+    {
+        // Reset the fields
+        newAssistantModel = String.Empty;
+        newAssistantName = String.Empty;
+        newAssistantInstructions = String.Empty;
+        newAssistantTools.Clear(); // Clear the tool list
+
+        // Show the modal
+        showNewAssistant = true;
+    }
+
+    private async Task CreateAssistant()
+    {
+        // Logic to collect data and call the AssistantService with it
+        var newAssistant = await AssistantService.CreateAssistantAsync(
+            selectedModelId,
+            newAssistantName,
+            newAssistantInstructions,
+            newAssistantTools // For now, this is an empty list
+        );
+
+        // Refresh the list and close the modal
+        await RefreshAssistantList();
+
+        showNewAssistant = false;
+    }
+
+    private async Task RefreshAssistantList()
+    {
+        assistantsList = await AssistantService.ListAssistantsAsync();
+    }
+    private async Task EditAssistant(string id)
+    {
+        Assistant currentAssistant = await AssistantService.RetrieveAssistantAsync(id);
+        // Reset the fields
+        newAssistantModel = currentAssistant.Model;
+        newAssistantName = currentAssistant.Name;
+        newAssistantInstructions = currentAssistant.Instructions;
+        newAssistantTools = currentAssistant.Tools; // Clear the tool list
+        AssistantID = currentAssistant.Id;
+
+        // Show the modal
+        showEditAssistant = true;
+    }
+
+    private async Task SaveAssistant(string id)
+    {
+
+    }
+
+    private void CloseFullscreenModal()
+    {
+        showNewAssistant = false;
+    }
+
+    private async Task DeleteAssistant(string id)
+    {
+        await AssistantService.DeleteAssistantAsync(id);
+        assistantsList = await AssistantService.ListAssistantsAsync(); // Refresh the list
+    }
+
+    private async Task<ModelsList> GetModelData()
+    {
+        return await openai.GetModelsAsync();
+    }
+
+    private void OnModelSelected(ChangeEventArgs e)
+    {
+        selectedModelId = e.Value.ToString();
+    }
+}

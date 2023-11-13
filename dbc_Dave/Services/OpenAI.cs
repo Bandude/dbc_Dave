@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Text;
+using dbc_Dave.Data.Models;
+using Microsoft.SqlServer.Server;
 
 
 namespace dbc_Dave.Services
@@ -20,6 +22,9 @@ namespace dbc_Dave.Services
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
             _logger = logger;
         }
+
+
+
 
         public async Task<string> TranscribeAudioAsync(string audioFilePath, string model)
         {
@@ -71,6 +76,18 @@ namespace dbc_Dave.Services
                 throw; 
             }
 
+        }
+
+        public async Task<ModelsList> GetModelsAsync()
+        {
+
+            var requestUri = "models";
+            var response = await _httpClient.GetAsync(requestUri);
+            response.EnsureSuccessStatusCode();
+            Console.WriteLine(response.Content.ReadAsStringAsync());
+
+            ModelsList modelsList = JsonConvert.DeserializeObject<ModelsList>(await response.Content.ReadAsStringAsync());
+            return modelsList;
         }
     }
 }

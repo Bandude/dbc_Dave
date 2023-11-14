@@ -11,7 +11,7 @@ namespace dbc_Dave.Services
         Task SetValue(string key, string value, DataQuery? query = null, string? currentUser = null);
         Task<string> GetValue(string key);
         List<string> GetKeys(string currentUser);
-        Task<List<CustomMessage>> GetOrCreateMessagesAsync(string key);
+        Task<List<DaveMessage>> GetOrCreateMessagesAsync(string key);
         Task DeleteQuery(string queryName, string currentUser);
     }
 }

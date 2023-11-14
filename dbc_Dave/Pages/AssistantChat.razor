@@ -1,0 +1,137 @@
+﻿@page "/chat"
+@using dbc_Dave.Data.Models
+@using dbc_Dave.Services;
+@using dbc_Dave.Services.Interfaces;
+@inject IAssistantService AssistantService
+@inject IThreadService ThreadService
+
+<PageTitle>Assistant Chat</PageTitle>
+
+<div class="container my-3">
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="mb-3">
+            <label for="assistantSelect" class="form-label"><h3>Select an Assistant</h3></label>
+            <select @bind="selectedAssistantId" id="assistantSelect" class="form-select">
+                <option value="">-- Select an Assistant --</option>
+                @foreach (var assistant in assistants.Data)
+                {
+                    <option value="@assistant.Id">@assistant.Name</option>
+                }
+            </select>
+            <button @onclick="StartConversation" class="btn btn-primary mt-2">Start Chat</button>
+        </div>
+    }
+
+  @*  @if (thread != null)
+    {
+        <h3>Conversation with @selectedAssistant?.Name</h3>
+        <div id="chat-container" class="chat-container mb-3 p-3 border rounded overflow-auto" style="height: 300px;">
+            @foreach (var message in thread.Messages)
+            {
+                <div class="message @GetMessageClass(message.Author.Name)">
+                    <strong>@message.Author.Name:</strong>
+                    <p class="d-inline">@message.Content</p>
+                </div>
+            }
+        </div>
+        <div class="input-group">
+            <input type="text" @bind="userInput" class="form-control" placeholder="Type a message..." />
+            <button @onclick="SendMessage" class="btn btn-outline-secondary" type="button">Send</button>
+        </div>
+        @if (isSending)
+        {
+            <div class="text-center mt-2">
+                <div class="spinner-border text-secondary" role="status">
+                    <span class="visually-hidden">Sending...</span>
+                </div>
+            </div>
+        }
+    }*@
+</div>
+
+@code {
+    private AssistantList assistants;
+    private string selectedAssistantId;
+    private Assistant selectedAssistant;
+    private AssistantThread thread;
+    private ThreadAndRun threadAndRun = new ThreadAndRun();
+    private string userInput;
+    private Run run;
+    private bool isLoading = true;
+    private bool isSending = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            assistants = await AssistantService.ListAssistantsAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task StartConversation()
+    {
+
+        if (!string.IsNullOrWhiteSpace(selectedAssistantId))
+        {
+            List<Message> messages = new List<Message>();
+            Message message = new Message
+            {
+                Role = "user",
+                Content = "Please tell me a bit about yourself"
+            };
+            messages.Add(message);
+            thread = new AssistantThread
+                {
+
+                    messages = messages
+                };
+
+
+            isLoading = true;
+            selectedAssistant = assistants.Data.FirstOrDefault(a => a.Id == selectedAssistantId) ?? throw new Exception("No Assistant Selected");
+
+            ThreadAndRun threadAndRun = new ThreadAndRun
+                {
+                    assistant_id = selectedAssistant.Id,
+                    thread = thread
+                };
+
+
+            run = await ThreadService.ThreadAndRunAsync(threadAndRun);
+
+
+
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        //if (!string.IsNullOrWhiteSpace(userInput))
+        //{
+        //    isSending = true;
+        //    await AssistantService.SendMessageAsync(thread.Id, userInput);
+        //    userInput = string.Empty;
+        //    thread = await AssistantService.GetThreadAsync(thread.Id);
+        //    isSending = false;
+        //}
+    }
+
+    private string GetMessageClass(string authorName)
+    {
+        return authorName == selectedAssistant?.Name ? "text-end" : "text-start";
+    }
+}

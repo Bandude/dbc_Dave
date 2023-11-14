@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OAuth;
+using dbc_Dave.Services.Interfaces;
 
 public class Program
 {
@@ -31,14 +32,14 @@ public class Program
             builder.Configuration.AddJsonFile("appsettings.Development.json", optional: true);
         }
 
-        
+
 
         // Add environment variables configuration source
         builder.Configuration.AddEnvironmentVariables();
 
         var apiKey = builder.Configuration.GetValue<string>("OpenAi:ApiKey") ?? Environment.GetEnvironmentVariable("OpenAi_ApiKey") ?? "";
         var redishost = builder.Configuration.GetValue<string>("RedisHost") ?? "localhost:6379";
-        
+
         // Set the connection string
         var connectionString = builder.Configuration.GetConnectionString("usersContextConnection") ?? throw new InvalidOperationException("Connection string 'usersContextConnection' not found.");
         builder.Services.AddDbContextFactory<dbc_UsersContext>(options => options.UseSqlServer(connectionString));
@@ -85,14 +86,36 @@ public class Program
             new RedisService(
                 redishost,
                 provider.GetRequiredService<IDbContextFactory<dbc_UsersContext>>(),
-                provider.GetRequiredService<ILogger<RedisService>>() // Use ILogger<RedisService> or the appropriate ILogger type
+                provider.GetRequiredService<ILogger<RedisService>>() 
+            )
+        );
+        builder.Services.AddSingleton<IAssistantService>(provider =>
+            new AssistantService(
+            apiKey,
+            provider.GetRequiredService<ILogger<AssistantService>>()
+            )
+        );
+        builder.Services.AddSingleton<IOpenAI>(provider =>
+            new OpenAI(
+                apiKey,
+                provider.GetRequiredService<ILogger<OpenAI>>()
+            )
+        );
+        builder.Services.AddSingleton<IThreadService>(provider =>
+            new ThreadService(
+                apiKey,
+                provider.GetRequiredService<ILogger<ThreadService>>()
+            )
+        );
+        builder.Services.AddSingleton<IMessageService>(provider =>
+            new MessageService(
+                apiKey,
+                provider.GetRequiredService<ILogger<MessageService>>()
             )
         );
 
-
         // Add singleton services
         builder.Services.AddSingleton<IOpenAI>(provider => new OpenAI(apiKey, provider.GetRequiredService<ILogger<OpenAI>>()));
-        builder.Services.AddSingleton<AssistantService>(provider => new AssistantService(apiKey, provider.GetRequiredService<ILogger<AssistantService>>()));
         builder.Services.AddSingleton<ThreadService>(provider => new ThreadService(apiKey, provider.GetRequiredService<ILogger<ThreadService>>()));
         builder.Services.AddSingleton<MessageService>(provider => new MessageService(apiKey, provider.GetRequiredService<ILogger<MessageService>>()));
         builder.Services.AddSingleton<IEmailSender, DummyEmailSender>();

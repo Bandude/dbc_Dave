@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
+using dbc_Dave.Data.Models;
+using dbc_Dave.Services.Interfaces;
 using Newtonsoft.Json;
 
 namespace dbc_Dave.Services
 {
    
 
-        public class AssistantService
+        public class AssistantService : IAssistantService
     {
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
@@ -36,7 +37,7 @@ namespace dbc_Dave.Services
 
         }
 
-        public async Task<Assistant> CreateAssistantAsync(string model, string name, string instructions, List<Tool> tools)
+        public async Task<Assistant> CreateAssistantAsync(string model, string name, string instructions, List<Tool>? tools)
         {
             try
             {
@@ -105,19 +106,25 @@ namespace dbc_Dave.Services
                 throw;
             }
         }
-
         public async Task<AssistantList> ListAssistantsAsync()
         {
             try
             {
                 using var response = await _httpClient.GetAsync("assistants");
-                var jsonResponse = await EnsureSuccess(response);
 
-                return JsonConvert.DeserializeObject<AssistantList>(jsonResponse);
+                // This ensures a successful status code (e.g. 200 OK), or throws an exception.
+                var jsonResponse = await EnsureSuccess(response);
+                // Configure JsonSerializerSettings to include your custom converter for Tools.
+                var settings = new JsonSerializerSettings
+                {
+                    Converters = new[] { new ToolConverter() }
+                };
+                // Deserialize JSON to the AssistantList object using the provided settings.
+                return JsonConvert.DeserializeObject<AssistantList>(jsonResponse, settings);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error occurred while listing assistant {e}", e);
+                _logger.LogError(e, "Error occurred while listing assistants: {e}", e);
                 throw;
             }
         }
@@ -205,80 +212,4 @@ namespace dbc_Dave.Services
       
 
     }
-    public class Assistant
-    {
-        [JsonProperty("id")]
-        public string Id { get; set; }
-
-        [JsonProperty("object")]
-        public string ObjectType { get; set; }
-
-        [JsonProperty("created_at")]
-        public long CreatedAt { get; set; }
-
-        [JsonProperty("name")]
-        public string Name { get; set; }
-
-        [JsonProperty("description", NullValueHandling = NullValueHandling.Ignore)]
-        public string Description { get; set; }
-
-        [JsonProperty("model")]
-        public string Model { get; set; }
-
-        [JsonProperty("instructions")]
-        public string Instructions { get; set; }
-
-        [JsonProperty("tools")]
-        public List<Tool> Tools { get; set; }
-
-        [JsonProperty("file_ids", NullValueHandling = NullValueHandling.Ignore)]
-        public List<string> FileIds { get; set; }
-
-        [JsonProperty("metadata", NullValueHandling = NullValueHandling.Ignore)]
-        public object Metadata { get; set; }
-
-        [JsonProperty("deleted", NullValueHandling = NullValueHandling.Ignore)]
-        public bool? Deleted { get; set; }
-    }
-
-    public class Tool
-    {
-        [JsonProperty("type")]
-        public string Type { get; set; }
-    }
-
-    public class AssistantList
-    {
-        [JsonProperty("object")]
-        public string ObjectType { get; set; }
-
-        [JsonProperty("data")]
-        public List<Assistant> Data { get; set; }
-
-        [JsonProperty("has_more")]
-        public bool HasMore { get; set; }
-    }
-
-    public class AssistantFile
-    {
-        [JsonProperty("id")]
-        public string Id { get; set; }
-
-        [JsonProperty("object")]
-        public string ObjectType { get; set; }
-
-        // Additional properties can be included here as needed
-    }
-
-    public class AssistantFileDeleted
-    {
-        [JsonProperty("id")]
-        public string Id { get; set; }
-
-        [JsonProperty("object")]
-        public string ObjectType { get; set; }
-
-        [JsonProperty("deleted")]
-        public bool Deleted { get; set; }
-    }
-}
+ }

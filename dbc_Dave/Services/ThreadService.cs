@@ -2,17 +2,16 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using dbc_Dave.Data.Models; // Unsure about the namespace - replace with the correct one
 
 namespace dbc_Dave.Services
 {
-    public class ThreadService
+    public class ThreadService : IThreadService
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger _logger;
-
 
         public ThreadService(string apiKey, ILogger logger)
         {
@@ -21,12 +20,12 @@ namespace dbc_Dave.Services
                 throw new ArgumentException("API key cannot be null or whitespace.", nameof(apiKey));
             }
 
-            
             _httpClient = new HttpClient
             {
                 BaseAddress = new Uri("https://api.openai.com/v1/")
             };
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            _httpClient.DefaultRequestHeaders.Add("OpenAI-Beta", "assistants=v1");
             _logger = logger;
         }
 
@@ -38,7 +37,7 @@ namespace dbc_Dave.Services
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<ThreadResponse>(content);
+                return JsonConvert.DeserializeObject<ThreadResponse>(content);
             }
             catch (Exception e)
             {
@@ -55,7 +54,7 @@ namespace dbc_Dave.Services
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<ThreadResponse>(content);
+                return JsonConvert.DeserializeObject<ThreadResponse>(content);
             }
             catch (Exception e)
             {
@@ -68,12 +67,12 @@ namespace dbc_Dave.Services
         {
             try
             {
-                var jsonRequest = JsonSerializer.Serialize(modifyRequest);
+                var jsonRequest = JsonConvert.SerializeObject(modifyRequest);
                 var response = await _httpClient.PostAsync($"threads/{threadId}", new StringContent(jsonRequest, Encoding.UTF8, "application/json"));
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<ThreadResponse>(content);
+                return JsonConvert.DeserializeObject<ThreadResponse>(content);
             }
             catch (Exception e)
             {
@@ -91,7 +90,7 @@ namespace dbc_Dave.Services
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<DeleteThreadResponse>(content);
+                return JsonConvert.DeserializeObject<DeleteThreadResponse>(content);
             }
             catch (Exception e)
             {
@@ -100,31 +99,28 @@ namespace dbc_Dave.Services
             }
         }
 
-        // Model classes for the JSON responses.
-        public class ThreadResponse
+        // Assuming there is some sort of Run and ThreadAndRun models being used here.
+        public async Task<Run> ThreadAndRunAsync(ThreadAndRun threadAndRun)
         {
-            public string Id { get; set; }
-            public string Object { get; set; }
-            public long CreatedAt { get; set; }
-            public Metadata Metadata { get; set; }
-        }
-
-        public class DeleteThreadResponse
-        {
-            public string Id { get; set; }
-            public string Object { get; set; }
-            public bool Deleted { get; set; }
-        }
-
-        public class ModifyThreadRequest
-        {
-            public Metadata Metadata { get; set; }
-        }
-
-        public class Metadata
-        {
-            public string Modified { get; set; }
-            public string User { get; set; }
+            try
+            {
+                var jsonRequest = JsonConvert.SerializeObject(threadAndRun);
+                var httpContent = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync("threads/runs", httpContent);
+                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
+                // Configure JsonSerializerSettings to include your custom converter for Tools.
+                var settings = new JsonSerializerSettings
+                {
+                    Converters = new[] { new ToolConverter() }
+                };
+                return JsonConvert.DeserializeObject<Run>(content, settings); // Use the settings with custom converter
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error occurred while creating a thread and run.");
+                throw;
+            }
         }
     }
 }

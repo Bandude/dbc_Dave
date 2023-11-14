@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using dbc_Dave.Data.Models;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -252,12 +253,6 @@ namespace dbc_Dave.Services
 
             [JsonProperty("metadata")]
             public Dictionary<string, object> Metadata { get; set; }
-        }
-
-        public class Tool
-        {
-            [JsonProperty("type")]
-            public string Type { get; set; }
         }
 
         public class RunStep

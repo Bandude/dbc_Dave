@@ -32,8 +32,8 @@
 
 
 
-    public string? UserName;
-    public List<string> Queries = new List<string>();
+    private string? UserName;
+    private List<string> Queries = new List<string>();
     public string currentQuery = "New...";
     
 
@@ -47,9 +47,9 @@
         "Act as a psychologist providing strategies for stress management.\n" +
         "Act as a sleep expert giving tips for better sleep.";
 
-    public string? errorMessage;
-    public string systemPrompt = "";
-    public string systempromptid = "sysprmpt";
+    private string? errorMessage;
+    private string systemPrompt = "";
+    private string systempromptid = "sysprmpt";
 
     protected override async Task OnInitializedAsync()
     {
@@ -64,18 +64,18 @@
 
     }
 
-    public string selectedModel = "gpt-3.5-turbo";
-    public string selectedRole = "user";
-    public string selectedRoleDisplayName = "You";
-    public string message = "";
-    public bool isLoading = false;
-    public bool isDarkMode = false;
-    public int codeBlockCount = 0;
-    public ElementReference hiddenInputElement;
-    public bool controlEnter = false;
-    public CancellationTokenSource? cancellationTokenSource;
-    public ElementReference tooltipTarget;
-    public List<CustomMessage> messages = new List<CustomMessage>();
+    private string selectedModel = "gpt-3.5-turbo";
+    private string selectedRole = "user";
+    private string selectedRoleDisplayName = "You";
+    private string message = "";
+    private bool isLoading = false;
+    private bool isDarkMode = false;
+    private int codeBlockCount = 0;
+    private ElementReference hiddenInputElement;
+    private bool controlEnter = false;
+    private CancellationTokenSource? cancellationTokenSource;
+    private ElementReference tooltipTarget;
+    private List<DaveMessage> messages = new List<DaveMessage>();
     private string? _currentQuery;
 
 

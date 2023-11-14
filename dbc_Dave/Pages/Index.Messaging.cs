@@ -131,7 +131,7 @@ namespace dbc_Dave.Pages
                     return;
                 }
                 var key = queryId + ":" + UserName;
-                var messagesNew = JsonConvert.DeserializeObject<List<CustomMessage>>(await redis.GetValue(key));
+                var messagesNew = JsonConvert.DeserializeObject<List<DaveMessage>>(await redis.GetValue(key));
                 await redis.SetValue("current" + UserName, JsonConvert.SerializeObject(messagesNew));
                 messages = await redis.GetOrCreateMessagesAsync("current" + UserName);
                 currentQuery = queryId ?? "New...";
@@ -153,7 +153,7 @@ namespace dbc_Dave.Pages
         {
             if (!string.IsNullOrEmpty(systemPrompt))
             {
-                CustomMessage systemKeyPair = new CustomMessage("system", systemPrompt);
+                DaveMessage systemKeyPair = new DaveMessage("system", systemPrompt);
                 if (messages == null)
                 {
                     //var messages = await redis.GetOrCreateMessagesAsync("current" + UserName);
@@ -198,11 +198,11 @@ namespace dbc_Dave.Pages
 
                 if (role == "assistant" || role == "user")
                 {
-                    messages.Add(new CustomMessage(selectedRole, message));
+                    messages.Add(new DaveMessage(selectedRole, message));
                 }
                 else if (role == "system")
                 {
-                    messages.Insert(1, new CustomMessage(selectedRole, message));
+                    messages.Insert(1, new DaveMessage(selectedRole, message));
                     // Clear the system prompt message textarea after adding the system message.
                     await JSRuntime.InvokeVoidAsync("clearTextarea", "sysprmpt");
                     ShowSystemTextarea = false;
@@ -273,7 +273,7 @@ namespace dbc_Dave.Pages
                 var content = await openAiApi.ChatCompletionsAsync(selectedModel, conversationList, cancellationTokenSource.Token);
                 JObject jsonObject = JObject.Parse(content);
                 content = jsonObject["choices"]?[0]?["message"]?["content"]?.ToString() ?? "";
-                messages.Add(new CustomMessage("assistant", content));
+                messages.Add(new DaveMessage("assistant", content));
                 isLoading = false;
                 StateHasChanged();
                 await HighlightCodeBlocks();

@@ -26,21 +26,21 @@ namespace dbc_Dave.Services
 
         }
 
-        public async Task<List<CustomMessage>> GetOrCreateMessagesAsync(string key)
+        public async Task<List<DaveMessage>> GetOrCreateMessagesAsync(string key)
         {
             var db = _redisConnection.GetDatabase();
 
             // Try to obtain the JSON object from Redis by key
             var data = await db.StringGetAsync(key);
 
-            // If the data exist in Redis, deserialize it to List<CustomMessage>
+            // If the data exist in Redis, deserialize it to List<DaveMessage>
             if (!data.IsNull) { 
-                return JsonConvert.DeserializeObject<List<CustomMessage>>(data.ToString());
+                return JsonConvert.DeserializeObject<List<DaveMessage>>(data.ToString());
             }
             else
             {
                 // If the data does not exist in Redis, create a new list
-                List<CustomMessage> messages = new List<CustomMessage>();
+                List<DaveMessage> messages = new List<DaveMessage>();
                 return messages;
             }
          

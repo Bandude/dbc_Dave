@@ -4,12 +4,14 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using dbc_Dave.Services.Interfaces;
+using dbc_Dave.Data.Models;
 using Microsoft.Extensions.Logging;
 
 namespace dbc_Dave.Services
 {
    
-    public class MessageService
+    public class MessageService : IMessageService
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger _logger;
@@ -26,6 +28,7 @@ namespace dbc_Dave.Services
                 BaseAddress = new Uri("https://api.openai.com/v1/")
             };
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            _httpClient.DefaultRequestHeaders.Add("OpenAI-Beta", "assistants=v1");
             _logger = logger;
         }
 
@@ -102,56 +105,6 @@ namespace dbc_Dave.Services
             }
         }
 
-        // Model classes for handling messages
-        public class CreateMessageRequest
-        {
-            public string Role { get; set; }
-            public string Content { get; set; }
-        }
-
-        public class ModifyMessageRequest
-        {
-            public ThreadService.Metadata Metadata { get; set; }
-        }
-
-        public class MessageResponse
-        {
-            public string Id { get; set; }
-            public string Object { get; set; }
-            public long CreatedAt { get; set; }
-            public string ThreadId { get; set; }
-            public string Role { get; set; }
-            public List<ContentItem> Content { get; set; }
-            public List<string> FileIds { get; set; }
-            public string AssistantId { get; set; }
-            public string RunId { get; set; }
-            public ThreadService.Metadata Metadata { get; set; }
-        }
-
-        public class ContentItem
-        {
-            public string Type { get; set; }
-            public TextContent Text { get; set; }
-        }
-
-        public class TextContent
-        {
-            public string Value { get; set; }
-            public List<Annotation> Annotations { get; set; }
-        }
-
-        public class Annotation
-        {
-            // Define annotations if necessary...
-        }
-
-        public class MessageListResponse
-        {
-            public string Object { get; set; }
-            public List<MessageResponse> Data { get; set; }
-            public string FirstId { get; set; }
-            public string LastId { get; set; }
-            public bool HasMore { get; set; }
-        }
+    
     }
 }

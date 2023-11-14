@@ -64,8 +64,9 @@
     private Assistant selectedAssistant;
     private AssistantThread thread;
     private ThreadAndRun threadAndRun = new ThreadAndRun();
+
     private string userInput;
-    private Run run;
+    private Run _run;
     private bool isLoading = true;
     private bool isSending = false;
 
@@ -111,9 +112,14 @@
                 };
 
 
-            run = await ThreadService.ThreadAndRunAsync(threadAndRun);
+            _run = await ThreadService.ThreadAndRunAsync(threadAndRun);
 
+            StepList _runSteps = await ThreadService.ListRunStepsAsync(_run.Id, _run.ThreadId);
 
+            foreach(var steps in _runSteps.data)
+            {
+                
+            }
 
         }
     }

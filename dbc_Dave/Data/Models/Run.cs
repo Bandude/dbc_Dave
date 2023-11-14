@@ -1,35 +1,65 @@
 ﻿using System;
 using System.Collections.Generic;
 using dbc_Dave.Data.Models;
+using Newtonsoft.Json;
+
+
 public class Run
 {
+    [JsonProperty("id")]
     public string Id { get; set; }
+
+    [JsonProperty("object")]
     public string Object { get; set; }
+
+    [JsonProperty("created_at")]
     public int CreatedAt { get; set; }
-    public string ThreadId { get; set; }
+
+    [JsonProperty("run_id")]
+    public string RunId { get; set; }
+
+    [JsonProperty("assistant_id")]
     public string AssistantId { get; set; }
+
+    [JsonProperty("thread_id")]
+    public string ThreadId { get; set; }
+
+    [JsonProperty("type")]
+    public string Type { get; set; }
+
+    [JsonProperty("status")]
     public string Status { get; set; }
-    public RequiredAction RequiredAction { get; set; } // Details not provided, assuming separate class
-    public Error LastError { get; set; } // Details not provided, assuming separate class
-    public int ExpiresAt { get; set; }
-    public int? StartedAt { get; set; }
+
+    [JsonProperty("cancelled_at")]
     public int? CancelledAt { get; set; }
-    public int? FailedAt { get; set; }
+
+    [JsonProperty("completed_at")]
     public int? CompletedAt { get; set; }
-    public string Model { get; set; }
-    public string Instructions { get; set; }
-    public List<Tool> Tools { get; set; } // Assuming Tool is a separate class
-    public List<string> FileIds { get; set; }
-    public Dictionary<string, string> Metadata { get; set; } // Assuming maximum size enforced elsewhere
-    // ... Constructor, methods, etc.
+
+    [JsonProperty("expires_at")]
+    public int? ExpiresAt { get; set; }
+
+    [JsonProperty("failed_at")]
+    public int? FailedAt { get; set; }
+
+    //[JsonProperty("last_error")]
+    //public Error LastError { get; set; } // Assuming the Error class is defined elsewhere with JSON properties
+
+    [JsonProperty("step_details")]
+    public StepDetails StepDetails { get; set; } // Assuming a separate StepDetails class
 }
-public class RequiredAction
+
+public class StepDetails
 {
-    // Properties as per your "Show properties" instruction
-    // ...
+    [JsonProperty("type")]
+    public string Type { get; set; }
+
+    [JsonProperty("message_creation")]
+    public MessageCreationDetails MessageCreation { get; set; }
 }
-public class Error
+
+public class MessageCreationDetails
 {
-    // Properties as per your "Show properties" instruction
-    // ...
+    [JsonProperty("message_id")]
+    public string MessageId { get; set; }
 }

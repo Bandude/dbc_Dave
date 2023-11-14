@@ -2,7 +2,7 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
+using dbc_Dave.Services.Interfaces;
 using Newtonsoft.Json;
 using dbc_Dave.Data.Models; // Unsure about the namespace - replace with the correct one
 
@@ -99,7 +99,7 @@ namespace dbc_Dave.Services
             }
         }
 
-        // Assuming there is some sort of Run and ThreadAndRun models being used here.
+
         public async Task<Run> ThreadAndRunAsync(ThreadAndRun threadAndRun)
         {
             try
@@ -115,6 +115,27 @@ namespace dbc_Dave.Services
                     Converters = new[] { new ToolConverter() }
                 };
                 return JsonConvert.DeserializeObject<Run>(content, settings); // Use the settings with custom converter
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error occurred while creating a thread and run.");
+                throw;
+            }
+        }
+        public async Task<StepList> ListRunStepsAsync(string run_id, string thread_id)
+        {
+            try
+            {
+             
+                var response = await _httpClient.GetAsync($"threads/{thread_id}/runs/{run_id}/steps");
+                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
+                // Configure JsonSerializerSettings to include your custom converter for Tools.
+                var settings = new JsonSerializerSettings
+                {
+                    Converters = new[] { new ToolConverter() }
+                };
+                return JsonConvert.DeserializeObject<StepList>(content, settings); // Use the settings with custom converter
             }
             catch (Exception e)
             {

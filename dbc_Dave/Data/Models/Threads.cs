@@ -40,4 +40,6 @@ namespace dbc_Dave.Data.Models
         public AssistantThread thread { get; set; }
         
     }
+
+
 }

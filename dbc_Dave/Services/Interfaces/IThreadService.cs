@@ -10,5 +10,7 @@ namespace dbc_Dave.Services
         Task<DeleteThreadResponse> DeleteThreadAsync(string threadId);
 
         Task<Run> ThreadAndRunAsync(ThreadAndRun threadAndRun);
+
+        Task<StepList> ListRunStepsAsync(string run_id, string thread_id);
     }
 }

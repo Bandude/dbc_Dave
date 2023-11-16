@@ -3,9 +3,9 @@
 namespace dbc_Dave.Data.Models
 {
     // Model classes for the JSON responses.
-    public class AssistantThread
+    public class ThreadAndRunMessageList
     {
-        public List<Message> messages { get; set; }
+        public List<CreateMessageRequest> messages { get; set; }
     }
     public class ThreadResponse
     {
@@ -37,7 +37,7 @@ namespace dbc_Dave.Data.Models
     {
 
         public string assistant_id { get; set; }
-        public AssistantThread thread { get; set; }
+        public ThreadAndRunMessageList thread { get; set; }
         
     }
 

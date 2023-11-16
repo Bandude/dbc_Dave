@@ -93,14 +93,14 @@ namespace dbc_Dave.Services
             }
         }
 
-        public async Task<ListResponse<Run>> ListRunsAsync(string threadId)
+        public async Task<List<Run>> ListRunsAsync(string threadId)
         {
             try
             {
                 using var response = await _httpClient.GetAsync($"threads/{threadId}/runs");
                 var jsonResponse = await EnsureSuccess(response);
 
-                return JsonConvert.DeserializeObject<ListResponse<Run>>(jsonResponse);
+                return JsonConvert.DeserializeObject<List<Run>>(jsonResponse);
             }
             catch (Exception e)
             {
@@ -109,24 +109,24 @@ namespace dbc_Dave.Services
             }
         }
 
-        public async Task<Run> SubmitToolOutputsToRunAsync(string threadId, string runId, List<ToolOutput> toolOutputs)
-        {
-            try
-            {
-                var payload = new { tool_outputs = toolOutputs };
-                var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+        //public async Task<Run> SubmitToolOutputsToRunAsync(string threadId, string runId, List<ToolOutput> toolOutputs)
+        //{
+        //    try
+        //    {
+        //        var payload = new { tool_outputs = toolOutputs };
+        //        var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
 
-                using var response = await _httpClient.PostAsync($"threads/{threadId}/runs/{runId}/submit_tool_outputs", content);
-                var jsonResponse = await EnsureSuccess(response);
+        //        using var response = await _httpClient.PostAsync($"threads/{threadId}/runs/{runId}/submit_tool_outputs", content);
+        //        var jsonResponse = await EnsureSuccess(response);
 
-                return JsonConvert.DeserializeObject<Run>(jsonResponse);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error occurred while submitting tool outputs to a run: {Exception}", e);
-                throw;
-            }
-        }
+        //        return JsonConvert.DeserializeObject<Run>(jsonResponse);
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        _logger.LogError(e, "Error occurred while submitting tool outputs to a run: {Exception}", e);
+        //        throw;
+        //    }
+        //}
 
         public async Task<Run> CancelRunAsync(string threadId, string runId)
         {
@@ -183,14 +183,14 @@ namespace dbc_Dave.Services
             }
         }
 
-        public async Task<ListResponse<RunStep>> ListRunStepsAsync(string threadId, string runId)
+        public async Task<List<RunStep>> ListRunStepsAsync(string threadId, string runId)
         {
             try
             {
                 using var response = await _httpClient.GetAsync($"threads/{threadId}/runs/{runId}/steps");
                 var jsonResponse = await EnsureSuccess(response);
 
-                return JsonConvert.DeserializeObject<ListResponse<RunStep>>(jsonResponse);
+                return JsonConvert.DeserializeObject<List<RunStep>>(jsonResponse);
             }
             catch (Exception e)
             {
@@ -199,159 +199,6 @@ namespace dbc_Dave.Services
             }
         }
 
-       
 
-        public class Run
-        {
-            [JsonProperty("id")]
-            public string Id { get; set; }
-
-            [JsonProperty("object")]
-            public string Object { get; set; }
-
-            [JsonProperty("created_at")]
-            public long CreatedAt { get; set; }
-
-            [JsonProperty("assistant_id")]
-            public string AssistantId { get; set; }
-
-            [JsonProperty("thread_id")]
-            public string ThreadId { get; set; }
-
-            [JsonProperty("status")]
-            public string Status { get; set; }
-
-            [JsonProperty("started_at")]
-            public long? StartedAt { get; set; }
-
-            [JsonProperty("expires_at")]
-            public long? ExpiresAt { get; set; }
-
-            [JsonProperty("cancelled_at")]
-            public long? CancelledAt { get; set; }
-
-            [JsonProperty("failed_at")]
-            public long? FailedAt { get; set; }
-
-            [JsonProperty("completed_at")]
-            public long? CompletedAt { get; set; }
-
-            [JsonProperty("last_error")]
-            public string LastError { get; set; }
-
-            [JsonProperty("model")]
-            public string Model { get; set; }
-
-            [JsonProperty("instructions")]
-            public string Instructions { get; set; }
-
-            [JsonProperty("tools")]
-            public List<Tool> Tools { get; set; }
-
-            [JsonProperty("file_ids")]
-            public List<string> FileIds { get; set; }
-
-            [JsonProperty("metadata")]
-            public Dictionary<string, object> Metadata { get; set; }
-        }
-
-        public class RunStep
-        {
-            [JsonProperty("id")]
-            public string Id { get; set; }
-
-            [JsonProperty("object")]
-            public string Object { get; set; }
-
-            [JsonProperty("created_at")]
-            public long CreatedAt { get; set; }
-
-            [JsonProperty("run_id")]
-            public string RunId { get; set; }
-
-            [JsonProperty("assistant_id")]
-            public string AssistantId { get; set; }
-
-            [JsonProperty("thread_id")]
-            public string ThreadId { get; set; }
-
-            [JsonProperty("type")]
-            public string Type { get; set; }
-
-            [JsonProperty("status")]
-            public string Status { get; set; }
-
-            [JsonProperty("cancelled_at")]
-            public long? CancelledAt { get; set; }
-
-            [JsonProperty("completed_at")]
-            public long? CompletedAt { get; set; }
-
-            [JsonProperty("expired_at")]
-            public long? ExpiredAt { get; set; }
-
-            [JsonProperty("failed_at")]
-            public long? FailedAt { get; set; }
-
-            [JsonProperty("last_error")]
-            public string LastError { get; set; }
-
-            [JsonProperty("step_details")]
-            public StepDetails StepDetails { get; set; }
-        }
-
-        public class StepDetails
-        {
-            [JsonProperty("type")]
-            public string Type { get; set; }
-
-            [JsonProperty("message_creation")]
-            public MessageCreation MessageCreation { get; set; }
-        }
-
-        public class MessageCreation
-        {
-            [JsonProperty("message_id")]
-            public string MessageId { get; set; }
-        }
     }
-
-    // Additional models used in new method implementations
-    public class ToolOutput
-    {
-        [JsonProperty("tool_call_id")]
-        public string ToolCallId { get; set; }
-
-        [JsonProperty("output")]
-        public string Output { get; set; }
-    }
-
-    public class Message
-    {
-        [JsonProperty("role")]
-        public string Role { get; set; }
-
-        [JsonProperty("content")]
-        public string Content { get; set; }
-    }
-
-    public class ListResponse<T>
-    {
-        [JsonProperty("object")]
-        public string Object { get; set; }
-
-        [JsonProperty("data")]
-        public List<T> Data { get; set; }
-
-        [JsonProperty("first_id")]
-        public string FirstId { get; set; }
-
-        [JsonProperty("last_id")]
-        public string LastId { get; set; }
-
-        [JsonProperty("has_more")]
-        public bool HasMore { get; set; }
-    }
-
-
 }

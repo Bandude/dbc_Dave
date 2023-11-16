@@ -1,14 +1,10 @@
-﻿using dbc_Dave.Areas.Identity.Data;
+﻿
 using dbc_Dave.Data;
 using dbc_Dave.Data.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.CodeAnalysis.Differencing;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using StackExchange.Redis;
-using System;
-using static dbc_Dave.Pages.Index;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+
 
 namespace dbc_Dave.Services
 {

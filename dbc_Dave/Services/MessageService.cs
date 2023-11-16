@@ -1,20 +1,18 @@
 ﻿using System;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using dbc_Dave.Services.Interfaces;
+using System.Text.Json.Serialization;
 using dbc_Dave.Data.Models;
-using Microsoft.Extensions.Logging;
+using dbc_Dave.Services.Interfaces;
 
 namespace dbc_Dave.Services
 {
-   
     public class MessageService : IMessageService
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger _logger;
+        private readonly JsonSerializerOptions _serializerOptions;
 
         public MessageService(string apiKey, ILogger logger)
         {
@@ -30,21 +28,42 @@ namespace dbc_Dave.Services
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
             _httpClient.DefaultRequestHeaders.Add("OpenAI-Beta", "assistants=v1");
             _logger = logger;
+
+            // Initialize JSON serializer options once and reuse for all serialization/deserialization
+            _serializerOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters =
+                {
+                    new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
+                    new PolymorphicConverter<MessageContent>() //pick up here
+                }
+            };
         }
 
-        // Existing methods from the previous example...
+        // Existing methods...
 
-        // New methods for handling messages
-        public async Task<MessageResponse> CreateMessageAsync(string threadId, CreateMessageRequest createMessageRequest)
+        // Helper method to deserialize HTTP content to a Message object
+        private async Task<Message> DeserializeMessage(HttpContent content)
+        {
+            var jsonString = await content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<Message>(jsonString, _serializerOptions);
+        }
+
+        // Generic helper method to perform POST requests and return deserialized response
+        private async Task<Message> PostAndDeserializeAsync(string url, object requestBody)
+        {
+            var jsonRequest = JsonSerializer.Serialize(requestBody, _serializerOptions);
+            var response = await _httpClient.PostAsync(url, new StringContent(jsonRequest, Encoding.UTF8, "application/json"));
+            response.EnsureSuccessStatusCode();
+            return await DeserializeMessage(response.Content);
+        }
+
+        public async Task<Message> CreateMessageAsync(string threadId, CreateMessageRequest createMessageRequest)
         {
             try
             {
-                var jsonRequest = JsonSerializer.Serialize(createMessageRequest);
-                var response = await _httpClient.PostAsync($"threads/{threadId}/messages", new StringContent(jsonRequest, Encoding.UTF8, "application/json"));
-                response.EnsureSuccessStatusCode();
-
-                var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<MessageResponse>(content);
+                return await PostAndDeserializeAsync($"threads/{threadId}/messages", createMessageRequest);
             }
             catch (Exception e)
             {
@@ -53,15 +72,14 @@ namespace dbc_Dave.Services
             }
         }
 
-        public async Task<MessageResponse> RetrieveMessageAsync(string threadId, string messageId)
+        public async Task<Message> RetrieveMessageAsync(string threadId, string messageId)
         {
             try
             {
                 var response = await _httpClient.GetAsync($"threads/{threadId}/messages/{messageId}");
                 response.EnsureSuccessStatusCode();
-
                 var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<MessageResponse>(content);
+                return await DeserializeMessage(response.Content);
             }
             catch (Exception e)
             {
@@ -70,16 +88,11 @@ namespace dbc_Dave.Services
             }
         }
 
-        public async Task<MessageResponse> ModifyMessageAsync(string threadId, string messageId, ModifyMessageRequest modifyRequest)
+        public async Task<Message> ModifyMessageAsync(string threadId, string messageId, ModifyMessageRequest modifyRequest)
         {
             try
             {
-                var jsonRequest = JsonSerializer.Serialize(modifyRequest);
-                var response = await _httpClient.PostAsync($"threads/{threadId}/messages/{messageId}", new StringContent(jsonRequest, Encoding.UTF8, "application/json"));
-                response.EnsureSuccessStatusCode();
-
-                var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<MessageResponse>(content);
+                return await PostAndDeserializeAsync($"threads/{threadId}/messages/{messageId}", modifyRequest);
             }
             catch (Exception e)
             {
@@ -94,9 +107,8 @@ namespace dbc_Dave.Services
             {
                 var response = await _httpClient.GetAsync($"threads/{threadId}/messages");
                 response.EnsureSuccessStatusCode();
-
                 var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<MessageListResponse>(content);
+                return JsonSerializer.Deserialize<MessageListResponse>(content, _serializerOptions);
             }
             catch (Exception e)
             {
@@ -104,7 +116,5 @@ namespace dbc_Dave.Services
                 throw;
             }
         }
-
-    
     }
 }

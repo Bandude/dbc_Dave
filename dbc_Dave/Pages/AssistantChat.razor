@@ -4,6 +4,7 @@
 @using dbc_Dave.Services.Interfaces;
 @inject IAssistantService AssistantService
 @inject IThreadService ThreadService
+@inject IMessageService MessageService
 
 <PageTitle>Assistant Chat</PageTitle>
 
@@ -59,14 +60,15 @@
 </div>
 
 @code {
-    private AssistantList assistants;
-    private string selectedAssistantId;
-    private Assistant selectedAssistant;
-    private AssistantThread thread;
+    private AssistantList? assistants;
+    private string? selectedAssistantId;
+    private Assistant? selectedAssistant;
+    private ThreadAndRunMessageList? thread;
     private ThreadAndRun threadAndRun = new ThreadAndRun();
-
-    private string userInput;
-    private Run _run;
+    private string? _runThreadID;
+    private Message _message;
+    private string? userInput;
+    private Run? _run;
     private bool isLoading = true;
     private bool isSending = false;
 
@@ -88,14 +90,15 @@
 
         if (!string.IsNullOrWhiteSpace(selectedAssistantId))
         {
-            List<Message> messages = new List<Message>();
-            Message message = new Message
+            List<CreateMessageRequest> messages = new List<CreateMessageRequest>();
+            CreateMessageRequest message = new CreateMessageRequest
             {
-                Role = "user",
-                Content = "Please tell me a bit about yourself"
+                role = "user",
+                content = "Please tell me a bit about yourself"
             };
+
             messages.Add(message);
-            thread = new AssistantThread
+            thread = new ThreadAndRunMessageList
                 {
 
                     messages = messages
@@ -114,12 +117,19 @@
 
             _run = await ThreadService.ThreadAndRunAsync(threadAndRun);
 
-            StepList _runSteps = await ThreadService.ListRunStepsAsync(_run.Id, _run.ThreadId);
+            _runThreadID = _run.ThreadId.ToString();
 
-            foreach(var steps in _runSteps.data)
-            {
-                
-            }
+
+            StepList _runSteps = await ThreadService.ListRunStepsAsync(_run.Id, _run.ThreadId);
+            //message id msg_wxwKHskTtCny2u5DOhpuMicA
+
+            var _messageid = _runSteps.data[0].StepDetails.MessageCreation.MessageId;
+
+            _message = await MessageService.RetrieveMessageAsync(_runThreadID, _messageid);
+
+
+
+
 
         }
     }

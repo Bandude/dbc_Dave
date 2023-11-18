@@ -108,9 +108,15 @@ namespace dbc_Dave.Pages
                 query.QueryName = configName;
                 query.QueryText = JsonConvert.SerializeObject(messages);
                 query.UserId = UserName;
+                currentQuery = configName ;
 
-                await redis.SetValue(configName + ":" + UserName, JsonConvert.SerializeObject(messages), query, UserName);
+                await redis.SetValue(currentQuery + ":" + UserName, JsonConvert.SerializeObject(messages), query, UserName);
+
             }
+
+            //load the query just saved
+            await GetQuery(currentQuery, false);
+      
 
             StateHasChanged();
 
@@ -120,7 +126,7 @@ namespace dbc_Dave.Pages
         // If the provided query ID is "New...", it clears all messages and sets the currentQuery to "New...".
         // Otherwise, it fetches the stored messages from Redis using the query ID and username as the key,
         // deserializes the messages, and updates the UI to display the retrieved messages.
-        private async Task GetQuery(string queryId)
+        private async Task GetQuery(string queryId, bool hideGrid = true)
         {
             try
             {
@@ -135,7 +141,13 @@ namespace dbc_Dave.Pages
                 await redis.SetValue("current" + UserName, JsonConvert.SerializeObject(messagesNew));
                 messages = await redis.GetOrCreateMessagesAsync("current" + UserName);
                 currentQuery = queryId ?? "New...";
-                await JSRuntime.InvokeVoidAsync("showGrid");
+ 
+                if (hideGrid)
+                {
+
+                    await JSRuntime.InvokeVoidAsync("showGrid");
+                }
+                    
             }
             catch (Exception ex)
             {

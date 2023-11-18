@@ -50,20 +50,6 @@
     private string? errorMessage;
     private string systemPrompt = "";
     private string systempromptid = "sysprmpt";
-
-    protected override async Task OnInitializedAsync()
-    {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        UserName = user.Identity?.Name;
-
-        messages = await redis.GetOrCreateMessagesAsync("current" + UserName);
-
-
-
-    }
-
     private string selectedModel = "gpt-3.5-turbo";
     private string selectedRole = "user";
     private string selectedRoleDisplayName = "You";
@@ -80,13 +66,24 @@
 
 
     // Used for auto scale textarea
-    public ElementReference systemTextareaElement;
-    public ElementReference messageTextareaElement;
+    private ElementReference systemTextareaElement;
+    private ElementReference messageTextareaElement;
+    private bool showErrorPopup = false;
+    private string newQuery = "New...";
 
-    public bool showErrorPopup = false;
 
-    public string newQuery = "New...";
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
 
+        UserName = user.Identity?.Name;
+
+        messages = await redis.GetOrCreateMessagesAsync("current" + UserName);
+
+
+
+    }
 
 }
 

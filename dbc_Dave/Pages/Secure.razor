@@ -1,0 +1,14 @@
+﻿@page "/secure"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAuthorizationService AuthorizationService
+
+<AuthorizeView Policy="ExternalAuthOnly">
+    <Authorized>
+        <h3>Secure Page</h3>
+        <p>This page is only accessible by users who have logged in with an external provider.</p>
+    </Authorized>
+    <NotAuthorized>
+        <p>You are not logged in with an external provider.</p>
+    </NotAuthorized>
+</AuthorizeView>

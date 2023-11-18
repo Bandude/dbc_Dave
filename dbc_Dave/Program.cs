@@ -3,17 +3,13 @@ using dbc_Dave.Areas.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using dbc_Dave.Services;
 using dbc_Dave.Data;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using dbc_Dave.Data.Models;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Identity.Client;
 using Microsoft.AspNetCore.HttpOverrides;
-using System.Net;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using dbc_Dave.Services.Interfaces;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+using Microsoft.AspNetCore.Identity;
 
 public class Program
 {
@@ -55,8 +51,32 @@ public class Program
 
 
 
+        var jwtSettings = builder.Configuration.GetSection("JwtSettings");
         builder.Services.AddAuthorization();
-        builder.Services.AddAuthentication();
+        //builder.Services.AddAuthentication(options =>
+        //{
+        //    // This is the Default scheme that's used when no scheme is specified.
+        //    // For example, [Authorize] without a scheme will use this by default.
+        //    options.DefaultScheme = IdentityConstants.ExternalScheme;
+        //    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+
+        //    // This is the scheme for authenticating users with JWT bearer tokens
+        //    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        //    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        //})
+        //        .AddJwtBearer(options =>
+        //{
+        //    options.TokenValidationParameters = new TokenValidationParameters
+        //    {
+        //        ValidateIssuer = true,
+        //        ValidateAudience = true,
+        //        ValidateLifetime = true,
+        //        ValidateIssuerSigningKey = true,
+        //        ValidIssuer = jwtSettings["Issuer"],
+        //        ValidAudience = jwtSettings["Audience"],
+        //        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]))
+        //    };
+        //});
         //builder.Services.AddAuthentication()
         //    .AddGoogle(options =>
         //    {
@@ -79,14 +99,12 @@ public class Program
         }
 
 
-
-
         builder.Services.AddDbContextFactory<dbc_UsersContext>();
         builder.Services.AddScoped<IRedisService>(provider =>
             new RedisService(
                 redishost,
                 provider.GetRequiredService<IDbContextFactory<dbc_UsersContext>>(),
-                provider.GetRequiredService<ILogger<RedisService>>() 
+                provider.GetRequiredService<ILogger<RedisService>>()
             )
         );
         builder.Services.AddSingleton<IAssistantService>(provider =>
@@ -114,11 +132,13 @@ public class Program
             )
         );
 
+        builder.Services.AddControllers();
+
         // Add singleton services
         builder.Services.AddSingleton<IOpenAI>(provider => new OpenAI(apiKey, provider.GetRequiredService<ILogger<OpenAI>>()));
         builder.Services.AddSingleton<ThreadService>(provider => new ThreadService(apiKey, provider.GetRequiredService<ILogger<ThreadService>>()));
         builder.Services.AddSingleton<MessageService>(provider => new MessageService(apiKey, provider.GetRequiredService<ILogger<MessageService>>()));
-        builder.Services.AddSingleton<IEmailSender, DummyEmailSender>();
+
         // Add logging 
         builder.Services.AddLogging(configure => configure
                     .AddConsole() // Use the console logger.
@@ -132,7 +152,7 @@ public class Program
             .AddHubOptions(x => x.MaximumReceiveMessageSize = 102400000);
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddHttpClient();
-        builder.Services.AddScoped<Utility>();
+        builder.Services.AddScoped<dbc_Dave.Services.Utility>();
 
 
         builder.Services.Configure<CookiePolicyOptions>(options =>
@@ -147,29 +167,23 @@ public class Program
 
 
         app.UseCookiePolicy();
-
-
         if (environment.IsProduction())
         {
             app.UseHsts();
         }
         app.UseHttpsRedirection();
-
         app.UseForwardedHeaders();
-
-
         app.UseStaticFiles();
-
-
+        //app.MapControllers();
         app.UseRouting();
+
 
         // Set up endpoints
         app.MapBlazorHub();
+        app.MapControllers();
         app.MapFallbackToPage("/_Host");
-
         app.UseAuthentication();
         app.UseAuthorization();
-
 
         // Run the application
         app.Run();

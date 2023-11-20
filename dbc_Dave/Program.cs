@@ -118,11 +118,11 @@ public class Program
         builder.Services.AddControllers();
 
         // Add singleton services
-        builder.Services.AddSingleton<IOpenAI>(provider => new OpenAI(apiKey, provider.GetRequiredService<ILogger<OpenAI>>()));
+        builder.Services.AddScoped<IOpenAI>(provider => new OpenAI(apiKey, provider.GetRequiredService<ILogger<OpenAI>>()));
         builder.Services.AddSingleton<IThreadService>(provider => new ThreadService(apiKey, provider.GetRequiredService<ILogger<ThreadService>>()));
         builder.Services.AddSingleton<IMessageService>(provider => new MessageService(apiKey, provider.GetRequiredService<ILogger<MessageService>>()));
-        //builder.Services.AddScoped<GetToken>(provider => new GetToken(provider.GetRequiredService<SignInManager<>()));
-        //builder.Services.AddScoped(provider => new APIController(provider.GetRequiredService<GetToken>()));
+        builder.Services.AddScoped(provider => new APIController(provider.GetService<IOpenAI>(), provider.GetService<IRedisService>(), provider.GetService<ILogger<APIController>>(), provider.GetRequiredService<IServiceProvider>()));
+
         // Add logging 
         builder.Services.AddLogging(configure => configure
                     .AddConsole() // Use the console logger.

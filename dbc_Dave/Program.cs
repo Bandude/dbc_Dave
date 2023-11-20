@@ -27,6 +27,25 @@ public class Program
         var environment = builder.Environment;
         var apiKey = builder.Configuration.GetValue<string>("OpenAi:ApiKey") ?? Environment.GetEnvironmentVariable("OpenAi_ApiKey") ?? "";
         var redisHost = builder.Configuration.GetValue<string>("RedisHost") ?? "localhost:6379";
+
+
+        //for azure container
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+        });
+
+        if (environment.IsProduction())
+        {
+            builder.Services.AddHsts(options =>
+            {
+                options.Preload = true;
+                options.IncludeSubDomains = true;
+                options.MaxAge = TimeSpan.FromDays(60);
+            });
+        }
+
         // Add environment-specific configuration sources
         if (environment.IsDevelopment())
         {
@@ -171,7 +190,7 @@ public class Program
         app.UseRouting();
 
         // Use authentication
-        //app.UseAuthentication();
+        app.UseAuthentication();
 
         // Use authorization
         app.UseAuthorization();
@@ -196,11 +215,12 @@ public class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-       
+
+
         // Run the application
         app.Run();
 
-  
+
     }
 
 }

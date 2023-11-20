@@ -11,7 +11,7 @@ using dbc_Dave.Data;
 
 namespace dbc_Dave.Migrations
 {
-    [DbContext(typeof(dbc_UsersContext))]
+    [DbContext(typeof(ApplicationDbContext))]
     [Migration("20230830052920_CreateIdentitySchema")]
     partial class CreateIdentitySchema
     {

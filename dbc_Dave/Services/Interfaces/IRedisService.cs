@@ -1,8 +1,5 @@
-﻿using dbc_Dave.Data;
+﻿
 using dbc_Dave.Data.Models;
-using dbc_Dave.Migrations;
-using System.Runtime.CompilerServices;
-using static dbc_Dave.Pages.Index;
 
 namespace dbc_Dave.Services
 {

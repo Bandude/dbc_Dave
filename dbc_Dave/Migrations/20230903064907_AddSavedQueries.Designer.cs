@@ -11,7 +11,7 @@ using dbc_Dave.Data;
 
 namespace dbc_Dave.Migrations
 {
-    [DbContext(typeof(dbc_UsersContext))]
+    [DbContext(typeof(ApplicationDbContext))]
     [Migration("20230903064907_AddSavedQueries")]
     partial class AddSavedQueries
     {

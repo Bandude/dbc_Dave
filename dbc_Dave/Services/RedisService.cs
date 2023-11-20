@@ -12,9 +12,9 @@ namespace dbc_Dave.Services
     {
         private readonly ConnectionMultiplexer _redisConnection;
         private readonly ILogger _logger;
-        private readonly IDbContextFactory<dbc_UsersContext> _contextFactory;
+        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
 
-        public RedisService(string host, IDbContextFactory<dbc_UsersContext> contextFactory, ILogger<RedisService> logger)
+        public RedisService(string host, IDbContextFactory<ApplicationDbContext> contextFactory, ILogger<RedisService> logger)
         {
             _redisConnection = ConnectionMultiplexer.Connect(host);
             _logger = logger;

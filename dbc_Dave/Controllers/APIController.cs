@@ -1,15 +1,22 @@
-﻿using dbc_Dave.Services;
+﻿using dbc_Dave.Data.Models;
+using dbc_Dave.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace dbc_Dave.Controllers
 {
-    [Route("V1/[controller]")]
+ 
+    [Route("[controller]")]
     [ApiController]
+    [Authorize]
     public class APIController : ControllerBase
     {
-     
+
+
         // GET: api/<APIController>
         [HttpGet]
         public IEnumerable<string> Get()
@@ -29,6 +36,7 @@ namespace dbc_Dave.Controllers
         public void Post([FromBody] string value)
         {
         }
+
 
         // PUT api/<APIController>/5
         [HttpPut("{id}")]

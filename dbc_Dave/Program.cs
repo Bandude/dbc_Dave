@@ -1,5 +1,5 @@
 
-using dbc_Dave.Areas.Identity.Data;
+using dbc_Dave.Components.Account;
 using Microsoft.EntityFrameworkCore;
 using dbc_Dave.Services;
 using dbc_Dave.Data;
@@ -8,8 +8,13 @@ using Microsoft.AspNetCore.HttpOverrides;
 using dbc_Dave.Services.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Components;
+using dbc_Dave.Components;
+using dbc_Dave.Controllers;
+
+
 
 public class Program
 {
@@ -20,73 +25,52 @@ public class Program
         // Initiate and build configuration
         var builder = WebApplication.CreateBuilder(args);
         var environment = builder.Environment;
-
-
+        var apiKey = builder.Configuration.GetValue<string>("OpenAi:ApiKey") ?? Environment.GetEnvironmentVariable("OpenAi_ApiKey") ?? "";
+        var redisHost = builder.Configuration.GetValue<string>("RedisHost") ?? "localhost:6379";
         // Add environment-specific configuration sources
         if (environment.IsDevelopment())
         {
             builder.Configuration.AddJsonFile("appsettings.Development.json", optional: true);
         }
-
-
-
         // Add environment variables configuration source
         builder.Configuration.AddEnvironmentVariables();
 
-        var apiKey = builder.Configuration.GetValue<string>("OpenAi:ApiKey") ?? Environment.GetEnvironmentVariable("OpenAi_ApiKey") ?? "";
-        var redishost = builder.Configuration.GetValue<string>("RedisHost") ?? "localhost:6379";
+        builder.Services.AddAntiforgery(options => { options.Cookie.Expiration = TimeSpan.Zero; });
 
-        // Set the connection string
+
+        // Add services to the container.
+        builder.Services.AddRazorComponents()
+            .AddInteractiveServerComponents();
+
+        builder.Services.AddAntiforgery();
+
+        builder.Services.AddCascadingAuthenticationState();
+        builder.Services.AddScoped<IdentityUserAccessor>();
+        builder.Services.AddScoped<IdentityRedirectManager>();
+        builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+
+
+
         var connectionString = builder.Configuration.GetConnectionString("usersContextConnection") ?? throw new InvalidOperationException("Connection string 'usersContextConnection' not found.");
-        builder.Services.AddDbContextFactory<dbc_UsersContext>(options => options.UseSqlServer(connectionString));
-
-        builder.Services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders =
-                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
-        });
-
-        builder.Services.AddDefaultIdentity<User>()
-            .AddEntityFrameworkStores<dbc_UsersContext>();
+        builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+            options.UseSqlServer(connectionString));
 
 
 
-        var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-        builder.Services.AddAuthorization();
-        //builder.Services.AddAuthentication(options =>
-        //{
-        //    // This is the Default scheme that's used when no scheme is specified.
-        //    // For example, [Authorize] without a scheme will use this by default.
-        //    options.DefaultScheme = IdentityConstants.ExternalScheme;
-        //    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+        builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddSignInManager()
+            .AddDefaultTokenProviders();
 
-        //    // This is the scheme for authenticating users with JWT bearer tokens
-        //    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        //    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        //})
-        //        .AddJwtBearer(options =>
-        //{
-        //    options.TokenValidationParameters = new TokenValidationParameters
-        //    {
-        //        ValidateIssuer = true,
-        //        ValidateAudience = true,
-        //        ValidateLifetime = true,
-        //        ValidateIssuerSigningKey = true,
-        //        ValidIssuer = jwtSettings["Issuer"],
-        //        ValidAudience = jwtSettings["Audience"],
-        //        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]))
-        //    };
-        //});
-        //builder.Services.AddAuthentication()
-        //    .AddGoogle(options =>
-        //    {
-        //        IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
-        //        options.ClientId = googleAuthNSection["ClientId"] ?? "";
-        //        options.ClientSecret = googleAuthNSection["ClientSecret"] ?? "";
-        //        options.CallbackPath = new PathString("/ExternalLogin");
+        builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
+            .AddEntityFrameworkStores<ApplicationDbContext>();
 
-        //    });
+        builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
+
+        builder.Services.AddServerSideBlazor();
+
+        builder.Services.AddSwaggerGen();
 
         if (environment.IsProduction())
         {
@@ -99,11 +83,10 @@ public class Program
         }
 
 
-        builder.Services.AddDbContextFactory<dbc_UsersContext>();
         builder.Services.AddScoped<IRedisService>(provider =>
             new RedisService(
-                redishost,
-                provider.GetRequiredService<IDbContextFactory<dbc_UsersContext>>(),
+                redisHost,
+                provider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>(),
                 provider.GetRequiredService<ILogger<RedisService>>()
             )
         );
@@ -136,9 +119,10 @@ public class Program
 
         // Add singleton services
         builder.Services.AddSingleton<IOpenAI>(provider => new OpenAI(apiKey, provider.GetRequiredService<ILogger<OpenAI>>()));
-        builder.Services.AddSingleton<ThreadService>(provider => new ThreadService(apiKey, provider.GetRequiredService<ILogger<ThreadService>>()));
-        builder.Services.AddSingleton<MessageService>(provider => new MessageService(apiKey, provider.GetRequiredService<ILogger<MessageService>>()));
-
+        builder.Services.AddSingleton<IThreadService>(provider => new ThreadService(apiKey, provider.GetRequiredService<ILogger<ThreadService>>()));
+        builder.Services.AddSingleton<IMessageService>(provider => new MessageService(apiKey, provider.GetRequiredService<ILogger<MessageService>>()));
+        //builder.Services.AddScoped<GetToken>(provider => new GetToken(provider.GetRequiredService<SignInManager<>()));
+        //builder.Services.AddScoped(provider => new APIController(provider.GetRequiredService<GetToken>()));
         // Add logging 
         builder.Services.AddLogging(configure => configure
                     .AddConsole() // Use the console logger.
@@ -146,7 +130,8 @@ public class Program
                 );
 
         // Add services to the container.
-        builder.Services.AddRazorPages();
+        builder.Services.AddRazorComponents()
+            .AddInteractiveServerComponents();
         builder.Services
             .AddServerSideBlazor()
             .AddHubOptions(x => x.MaximumReceiveMessageSize = 102400000);
@@ -171,22 +156,51 @@ public class Program
         {
             app.UseHsts();
         }
+
+
+        // Use HTTPS redirection
         app.UseHttpsRedirection();
+
+        // Use forwarded headers
         app.UseForwardedHeaders();
+
+        // Use static files
         app.UseStaticFiles();
-        //app.MapControllers();
+
+        // Use routing
         app.UseRouting();
 
+        // Use authentication
+        //app.UseAuthentication();
 
-        // Set up endpoints
-        app.MapBlazorHub();
-        app.MapControllers();
-        app.MapFallbackToPage("/_Host");
-        app.UseAuthentication();
+        // Use authorization
         app.UseAuthorization();
 
+        // Add the anti-forgery middleware at this point
+        app.UseAntiforgery();
+
+        // Configure the endpoints
+        app.MapControllers();
+
+        // Set up endpoints
+        app.MapRazorComponents<App>()
+                .AddInteractiveServerRenderMode();
+
+
+        app.MapAdditionalIdentityEndpoints();
+
+        app.MapIdentityApi<ApplicationUser>();
+
+        if (environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
+       
         // Run the application
         app.Run();
+
+  
     }
 
 }

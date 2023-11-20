@@ -48,8 +48,8 @@ namespace dbc_Dave.Controllers
         }
 
         // GET api/<APIController>/5
-        [HttpGet("Details/{id}")]
-        public async Task<ChatEntry> Details(string id)
+        [HttpGet("SendChatNoPrompt/{id}")]
+        public async Task<ChatEntry> SendChatNoPrompt(string id)
         {
             ChatEntry chatResponse = new ChatEntry();
             CancellationTokenSource token = new CancellationTokenSource();

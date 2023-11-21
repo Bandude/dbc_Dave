@@ -30,21 +30,13 @@ public class Program
 
 
         //for azure container
-        builder.Services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders =
-                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
-        });
+        //builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        //{
+        //    options.ForwardedHeaders =
+        //        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+        //});
 
-        if (environment.IsProduction())
-        {
-            builder.Services.AddHsts(options =>
-            {
-                options.Preload = true;
-                options.IncludeSubDomains = true;
-                options.MaxAge = TimeSpan.FromDays(60);
-            });
-        }
+
 
         // Add environment-specific configuration sources
         if (environment.IsDevelopment())
@@ -115,19 +107,19 @@ public class Program
             provider.GetRequiredService<ILogger<AssistantService>>()
             )
         );
-        builder.Services.AddSingleton<IOpenAI>(provider =>
+        builder.Services.AddScoped<IOpenAI>(provider =>
             new OpenAI(
                 apiKey,
                 provider.GetRequiredService<ILogger<OpenAI>>()
             )
         );
-        builder.Services.AddSingleton<IThreadService>(provider =>
+        builder.Services.AddScoped<IThreadService>(provider =>
             new ThreadService(
                 apiKey,
                 provider.GetRequiredService<ILogger<ThreadService>>()
             )
         );
-        builder.Services.AddSingleton<IMessageService>(provider =>
+        builder.Services.AddScoped<IMessageService>(provider =>
             new MessageService(
                 apiKey,
                 provider.GetRequiredService<ILogger<MessageService>>()
@@ -137,9 +129,9 @@ public class Program
         builder.Services.AddControllers();
 
         // Add singleton services
-        builder.Services.AddScoped<IOpenAI>(provider => new OpenAI(apiKey, provider.GetRequiredService<ILogger<OpenAI>>()));
-        builder.Services.AddSingleton<IThreadService>(provider => new ThreadService(apiKey, provider.GetRequiredService<ILogger<ThreadService>>()));
-        builder.Services.AddSingleton<IMessageService>(provider => new MessageService(apiKey, provider.GetRequiredService<ILogger<MessageService>>()));
+        ////builder.Services.AddScoped<IOpenAI>(provider => new OpenAI(apiKey, provider.GetRequiredService<ILogger<OpenAI>>()));
+        //builder.Services.AddSingleton<IThreadService>(provider => new ThreadService(apiKey, provider.GetRequiredService<ILogger<ThreadService>>()));
+        //builder.Services.AddSingleton<IMessageService>(provider => new MessageService(apiKey, provider.GetRequiredService<ILogger<MessageService>>()));
         builder.Services.AddScoped(provider => new APIController(provider.GetService<IOpenAI>(), provider.GetService<IRedisService>(), provider.GetService<ILogger<APIController>>(), provider.GetRequiredService<IServiceProvider>()));
 
         // Add logging 
@@ -148,9 +140,6 @@ public class Program
                     .SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Error) // Set the minimum log level.
                 );
 
-        // Add services to the container.
-        builder.Services.AddRazorComponents()
-            .AddInteractiveServerComponents();
         builder.Services
             .AddServerSideBlazor()
             .AddHubOptions(x => x.MaximumReceiveMessageSize = 102400000);
@@ -159,29 +148,31 @@ public class Program
         builder.Services.AddScoped<dbc_Dave.Services.Utility>();
 
 
-        builder.Services.Configure<CookiePolicyOptions>(options =>
-        {
-            options.CheckConsentNeeded = context => true;
-            options.MinimumSameSitePolicy = SameSiteMode.None;
-            options.Secure = CookieSecurePolicy.Always;
-        });
+        //builder.Services.Configure<CookiePolicyOptions>(options =>
+        //{
+        //    options.CheckConsentNeeded = context => true;
+        //    options.MinimumSameSitePolicy = SameSiteMode.None;
+        //    options.Secure = CookieSecurePolicy.Always;
+        //});
         // Build the application
+
+
         var app = builder.Build();
 
 
 
-        app.UseCookiePolicy();
-        if (environment.IsProduction())
-        {
-            app.UseHsts();
-        }
+        //app.UseCookiePolicy();
+        //if (environment.IsProduction())
+        //{
+        //    app.UseHsts();
+        //}
 
 
         // Use HTTPS redirection
-        app.UseHttpsRedirection();
+        //app.UseHttpsRedirection();
 
         // Use forwarded headers
-        app.UseForwardedHeaders();
+        //app.UseForwardedHeaders();
 
         // Use static files
         app.UseStaticFiles();

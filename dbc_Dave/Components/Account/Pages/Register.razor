@@ -15,6 +15,9 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
+@using Microsoft.AspNetCore.Antiforgery;
+@attribute [RequireAntiforgeryToken(false)]
+
 <PageTitle>Register</PageTitle>
 
 <h1>Register</h1>

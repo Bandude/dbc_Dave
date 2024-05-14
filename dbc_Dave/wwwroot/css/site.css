@@ -7,6 +7,8 @@ html, body {
     font-size: 14px;
     color: #646363;
     height: 100%;
+    background-image: url(../assets/background.png);
+    background-repeat: repeat;
 }
 p {
     font-family: 'Kumbh Sans', sans-serif !important;
@@ -26,8 +28,38 @@ p {
 
 .btn-primary {
     color: #fff;
-    background-color: #1b6ec2;
+    background-color: #6fbfd9;
     border-color: #1861ac;
+    font-family: 'Press Start 2P'
+}
+.btn-primary:hover {
+    background-color: black;
+}
+    .btn-primary:active {
+        background-color: black;
+    }
+
+    .btn-primary:focus {
+        background-color: black;
+    }
+    .btn-primary:active {
+        background-color: #6fbfd9;
+    }
+
+.btn-new {
+    color: #fff;
+    background-color: silver;
+    border-color: #1861ac;
+    font-family: 'Press Start 2P'
+}
+
+
+    .btn-primary:active {
+        background-color: #6fbfd9;
+    }
+.btn-danger {
+    font-family: 'Press Start 2P';
+    font-size: .8em;
 }
 
 .content {
@@ -428,6 +460,7 @@ pre code {
     display: block;
 }
 
+
 .hide {
     display: none;
 }
@@ -436,8 +469,10 @@ pre code {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    overflow: auto;
-    padding-bottom: 6rem; /* Increase the padding-bottom value here */
+    overflow: hidden; /* Disables scroll bar */
+    padding-bottom: 6rem;
+    word-wrap: break-word; /* Wraps the text to next line if needed */
+    white-space: normal; /* Breaks lines as necessary to fill line boxes */
 }
 
 .bottom-section {
@@ -514,7 +549,7 @@ input:checked + .slider:before {
 }
 
 .background {
-    background-image: url('../assets/background.png');
+    background-image: url(../assets/background.png);
     background-repeat: repeat;
 }
 
@@ -554,24 +589,7 @@ label {
 .form-control:focus{
     border-color:#acabab10;
 }
-.querySelect {
-    font-family: 'PRESS START 2P';
-    color: #6fbfd9;
-    padding: 5px;
-    border-style: dashed;
-    border-width: 4px;
-    border-color: rgb(163 163 163 / 67%);
-    width: 98%;
-    margin-left: 12px;
-}
-    .querySelect:focus-visible {
-        outline: none;
-    }
-    .querySelect option {
-        background-color: #fff;
-        color: #6fbfd9;
-        padding:2px;
-    }
+
 
 ul {
     list-style-type: none;

@@ -1,7 +1,5 @@
 ﻿
 using Microsoft.JSInterop;
-using System.Threading.Tasks;
-using static dbc_Dave.Pages.Index;
 
 namespace dbc_Dave.Services
 {

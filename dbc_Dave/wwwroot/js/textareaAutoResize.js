@@ -67,3 +67,37 @@ window.setFocusOnElement = function (id) {
 };
 
 
+function showGrid() {
+    // Get the grid element
+    var grid = document.getElementById("cardGrid");
+
+    // Get the button element
+    var button = document.getElementById("toggleButton");
+
+    // Check if grid is currently visible
+    var isGridVisible = !grid.classList.contains('d-none');
+
+    // If the grid is visible, hide it and update button text
+    if (isGridVisible) {
+        grid.classList.add('d-none');
+        button.innerHTML = "Load";
+    }
+    // If the grid is not visible, show it and update button text
+    else {
+        grid.classList.remove('d-none');
+        button.innerHTML = "Hide grid";
+    }
+}
+
+
+window.confirmDelete = () => {
+    return confirm("Are you sure you want to delete this?");
+}
+
+
+function clearTextarea(elementId) {
+    const textarea = document.getElementById(elementId);
+    if (textarea) {
+        textarea.value = ''; // Reset the textarea content.
+    }
+}

@@ -10,7 +10,7 @@ using dbc_Dave.Data;
 
 namespace dbc_Dave.Migrations
 {
-    [DbContext(typeof(dbc_UsersContext))]
+    [DbContext(typeof(ApplicationDbContext))]
     partial class dbc_UsersContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

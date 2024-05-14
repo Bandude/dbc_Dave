@@ -51,7 +51,7 @@
     private string? errorMessage;
     private string systemPrompt = "";
     private string systempromptid = "sysprmpt";
-    private string selectedModel = "gpt-3.5-turbo";
+    private string selectedModel = "gpt-4o-2024-05-13";
     private string selectedRole = "user";
     private string selectedRoleDisplayName = "You";
     private string message = "";
@@ -257,7 +257,7 @@
     // Toggles the selected AI model between "gpt-4-1106-preview" and "gpt-3.5-turbo-0613" based on a checkbox input.
     private void ToggleModel(bool isChecked)
     {
-        selectedModel = isChecked ? "gpt-4-0125-preview" : "gpt-3.5-turbo-1106";
+        selectedModel = isChecked ? "gpt-4o-2024-05-13" : "gpt-3.5-turbo-0125";
     }
 
     // Switches the current role within the user interface between 'user' and 'assistant'.
